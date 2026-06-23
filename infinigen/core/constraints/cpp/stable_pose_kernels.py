@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+import numpy as np
+
 try:
     from . import stable_pose_kernels_cpp as _cpp
 except Exception as exc:  # pragma: no cover - exercised when extension is absent.
@@ -13,6 +15,14 @@ else:
     C_EXTENSION_ERROR = None
 
 C_EXTENSION_AVAILABLE = _cpp is not None
+
+
+def _float_array(value: Any) -> np.ndarray:
+    return np.array(value, dtype=np.float64, order="C", copy=True)
+
+
+def _index_array(value: Any) -> np.ndarray:
+    return np.array(value, dtype=np.int_, order="C", copy=True)
 
 
 def cpp_backend_available() -> bool:
@@ -55,7 +65,7 @@ def compute_stable_poses_cpp_from_inputs(
     threshold: float,
     context: Any = None,
 ) -> Any:
-    """Placeholder for the future arrays-based C++ stable pose backend."""
+    """Compute stable poses with the arrays-based C++/Cython backend."""
     _ = context
     cpp = _require_cpp()
     kernel = getattr(cpp, "compute_stable_poses_from_arrays", None)
@@ -65,14 +75,14 @@ def compute_stable_poses_cpp_from_inputs(
             "compute_stable_poses_from_arrays; rebuild the extension"
         )
     return kernel(
-        vertices,
-        triangles,
-        face_normals,
-        triangles_center,
-        face_adjacency,
-        face_adjacency_edges,
-        sample_coms,
-        threshold,
+        _float_array(vertices),
+        _float_array(triangles),
+        _float_array(face_normals),
+        _float_array(triangles_center),
+        _index_array(face_adjacency),
+        _index_array(face_adjacency_edges),
+        _float_array(sample_coms),
+        float(threshold),
     )
 
 

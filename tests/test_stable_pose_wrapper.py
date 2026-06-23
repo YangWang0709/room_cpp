@@ -1,3 +1,4 @@
+from dataclasses import replace
 from pathlib import Path
 
 import numpy as np
@@ -116,6 +117,7 @@ def _install_fake_prepare(
         center_mass=None,
         sigma=0.0,
         n_samples=1,
+        threshold=0.0,
     ):
         calls.append(
             {
@@ -123,13 +125,14 @@ def _install_fake_prepare(
                 "center_mass": center_mass,
                 "sigma": sigma,
                 "n_samples": n_samples,
+                "threshold": threshold,
             }
         )
         if consume_random:
             np.random.random()
         if exception is not None:
             raise exception
-        return inputs
+        return replace(inputs, threshold=float(threshold))
 
     monkeypatch.setattr(stable_pose, "_prepare_stable_pose_inputs", fake_prepare)
     return calls, inputs
@@ -270,6 +273,7 @@ def test_cpp_backend_skeleton_falls_back_to_trimesh(monkeypatch):
             "center_mass": [0.0, 0.0, 0.0],
             "sigma": 0.1,
             "n_samples": 3,
+            "threshold": 0.2,
         }
     ]
     assert len(cpp_calls) == 1
@@ -498,7 +502,9 @@ def test_prepare_stable_pose_inputs_shapes():
     mesh = trimesh.creation.box()
     np.random.seed(0)
 
-    inputs = stable_pose._prepare_stable_pose_inputs(mesh, sigma=0.0, n_samples=1)
+    inputs = stable_pose._prepare_stable_pose_inputs(
+        mesh, sigma=0.0, n_samples=1, threshold=0.25
+    )
 
     assert isinstance(inputs, stable_pose.StablePoseInputs)
     assert inputs.sample_coms.shape == (1, 3)
@@ -508,6 +514,59 @@ def test_prepare_stable_pose_inputs_shapes():
     assert inputs.triangles_center.shape[1] == 3
     assert inputs.face_adjacency.shape[1] == 2
     assert inputs.face_adjacency_edges.shape[1] == 2
+    assert inputs.threshold == 0.25
+
+
+def test_wrapper_cpp_canary_uses_cpp_result(monkeypatch):
+    monkeypatch.setenv(stable_pose.STABLE_POSE_BACKEND_ENV_VAR, "cpp")
+    monkeypatch.setenv(stable_pose.VALIDATE_CPP_STABLE_POSE_ENV_VAR, "1")
+    monkeypatch.delenv(stable_pose.DISABLE_CPP_STABLE_POSE_ENV_VAR, raising=False)
+
+    original_compute_cpp = stable_pose._compute_stable_poses_cpp_from_inputs
+    captured = {}
+
+    def record_cpp_result(inputs, *, context=None):
+        result = original_compute_cpp(inputs, context=context)
+        captured["result"] = result
+        return result
+
+    monkeypatch.setattr(
+        stable_pose,
+        "_compute_stable_poses_cpp_from_inputs",
+        record_cpp_result,
+    )
+
+    np.random.seed(0)
+    result = stable_pose.compute_stable_poses(
+        trimesh.creation.box(), context="real-cpp-canary"
+    )
+
+    assert result is captured["result"]
+    stable_pose._validate_stable_pose_result(*result)
+
+
+def test_wrapper_cpp_no_canary_uses_cpp_and_preserves_preparation_rng(monkeypatch):
+    monkeypatch.setenv(stable_pose.STABLE_POSE_BACKEND_ENV_VAR, "cpp")
+    monkeypatch.delenv(stable_pose.VALIDATE_CPP_STABLE_POSE_ENV_VAR, raising=False)
+    monkeypatch.delenv(stable_pose.DISABLE_CPP_STABLE_POSE_ENV_VAR, raising=False)
+
+    def fail_if_called(*args, **kwargs):
+        raise AssertionError("trimesh fallback should not run when C++ succeeds")
+
+    monkeypatch.setattr(stable_pose, "_compute_stable_poses_trimesh", fail_if_called)
+
+    mesh = trimesh.creation.box()
+    np.random.seed(1357)
+    state_before = np.random.get_state()
+    result = stable_pose.compute_stable_poses(mesh, context="real-cpp-no-canary")
+    actual_state = np.random.get_state()
+    stable_pose._validate_stable_pose_result(*result)
+
+    np.random.set_state(state_before)
+    stable_pose._prepare_stable_pose_inputs(mesh, sigma=0.0, n_samples=1)
+    expected_state = np.random.get_state()
+
+    assert _rng_state_equal(actual_state, expected_state)
 
 
 def test_no_direct_trimesh_stable_pose_calls_outside_wrapper():

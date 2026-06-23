@@ -6,7 +6,7 @@ that currently fall back to trimesh without changing stable pose output.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 import logging
 import os
 
@@ -69,7 +69,13 @@ def _compute_stable_poses_trimesh(
     )
 
 
-def _prepare_stable_pose_inputs(mesh, center_mass=None, sigma=0.0, n_samples=1):
+def _prepare_stable_pose_inputs(
+    mesh,
+    center_mass=None,
+    sigma=0.0,
+    n_samples=1,
+    threshold=0.0,
+):
     cvh = mesh.convex_hull
     if center_mass is None:
         center_mass = mesh.center_mass
@@ -104,7 +110,7 @@ def _prepare_stable_pose_inputs(mesh, center_mass=None, sigma=0.0, n_samples=1):
         face_adjacency_edges=np.ascontiguousarray(
             cvh.face_adjacency_edges, dtype=np.int64
         ),
-        threshold=0.0,
+        threshold=float(threshold),
     )
 
 
@@ -302,8 +308,8 @@ def compute_stable_poses(
             center_mass=center_mass,
             sigma=sigma,
             n_samples=n_samples,
+            threshold=threshold,
         )
-        inputs = replace(inputs, threshold=float(threshold))
         cpp_result = _compute_stable_poses_cpp_from_inputs(
             inputs,
             context=context,
