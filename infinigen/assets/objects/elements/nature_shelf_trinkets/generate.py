@@ -34,6 +34,9 @@ NATURE_SHELF_TRINKETS_TIMING_CSV_ENV_VAR = (
 FAST_NATURE_TRINKET_STABLE_POSE_ENV_VAR = (
     "INFINIGEN_FAST_NATURE_TRINKET_STABLE_POSE"
 )
+DISABLE_NATURE_SHELF_CREATURE_TRINKETS_ENV_VAR = (
+    "INFINIGEN_DISABLE_NATURE_SHELF_CREATURE_TRINKETS"
+)
 NATURE_SHELF_TRINKETS_TIMING_CSV_NAME = (
     "infinigen_nature_shelf_trinkets_timing.csv"
 )
@@ -119,6 +122,10 @@ def _profile_nature_shelf_trinkets_enabled() -> bool:
 
 def _fast_nature_trinket_stable_pose_enabled() -> bool:
     return _env_truthy(FAST_NATURE_TRINKET_STABLE_POSE_ENV_VAR)
+
+
+def _disable_nature_shelf_creature_trinkets_enabled() -> bool:
+    return _env_truthy(DISABLE_NATURE_SHELF_CREATURE_TRINKETS_ENV_VAR)
 
 
 def _nature_shelf_trinkets_timing_csv_path() -> Path:
@@ -210,6 +217,24 @@ def _fast_stable_pose_allowed(base_factory) -> bool:
             mollusk.MolluskFactory,
         ),
     )
+
+
+def _nature_shelf_trinket_factory_choices(disable_creatures: bool):
+    factories = NatureShelfTrinketsFactory.factories
+    probs = NatureShelfTrinketsFactory.probs
+    if not disable_creatures:
+        return factories, probs
+
+    factories = list(factories)
+    probs = np.asarray(probs, dtype=float)
+    keep = [
+        factory not in (creatures.CarnivoreFactory, creatures.HerbivoreFactory)
+        for factory in factories
+    ]
+    keep_mask = np.asarray(keep, dtype=bool)
+    return [factory for factory, keep_one in zip(factories, keep) if keep_one], probs[
+        keep_mask
+    ]
 
 
 def _mesh_digest(mesh: trimesh.Trimesh) -> str:
@@ -349,8 +374,11 @@ class NatureShelfTrinketsFactory(AssetFactory):
     def __init__(self, factory_seed, coarse=False):
         super(NatureShelfTrinketsFactory, self).__init__(factory_seed, coarse)
         with FixedSeed(self.factory_seed):
+            factories, probs = _nature_shelf_trinket_factory_choices(
+                _disable_nature_shelf_creature_trinkets_enabled()
+            )
             base_factory_fn = np.random.choice(
-                self.factories, p=self.probs / self.probs.sum()
+                factories, p=probs / probs.sum()
             )
 
             kwargs = {}
