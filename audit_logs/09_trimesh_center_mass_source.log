@@ -1,0 +1,51 @@
+   560	        unlike self.center_mass
+   561	
+   562	        Returns
+   563	        ----------
+   564	        centroid : (3, ) float
+   565	          The average vertex weighted by face area
+   566	        """
+   567	
+   568	        # use the centroid of each triangle weighted by
+   569	        # the area of the triangle to find the overall centroid
+   570	        try:
+   571	            centroid = np.average(self.triangles_center,
+   572	                                  weights=self.area_faces,
+   573	                                  axis=0)
+   574	        except BaseException:
+   575	            # if all triangles are zero-area weights will not work
+   576	            centroid = self.triangles_center.mean(axis=0)
+   577	        return centroid
+   578	
+   579	    @property
+   580	    def center_mass(self):
+   581	        """
+   582	        The point in space which is the center of mass/volume.
+   583	
+   584	        If the current mesh is not watertight this is meaningless
+   585	        garbage unless it was explicitly set.
+   586	
+   587	        Returns
+   588	        -----------
+   589	        center_mass : (3, ) float
+   590	           Volumetric center of mass of the mesh
+   591	        """
+   592	        center_mass = self.mass_properties['center_mass']
+   593	        return center_mass
+   594	
+   595	    @center_mass.setter
+   596	    def center_mass(self, cm):
+   597	        self._center_mass = cm
+   598	        self._cache.delete('mass_properties')
+   599	
+   600	    @property
+   601	    def density(self):
+   602	        """
+   603	        The density of the mesh.
+   604	
+   605	        Returns
+   606	        -----------
+   607	        density : float
+   608	          The density of the mesh.
+   609	        """
+   610	        density = self.mass_properties['density']

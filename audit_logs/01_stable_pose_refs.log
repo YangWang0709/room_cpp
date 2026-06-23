@@ -1,0 +1,332 @@
+=== compute_stable_poses refs ===
+docs/PROFILE_RESULTS.md:805:`trimesh.poses.compute_stable_poses()` only for the three shell factories and
+docs/PROFILE_RESULTS.md:1194:`trimesh.poses.compute_stable_poses`.
+docs/NATURE_SHELF_TRINKETS_INVESTIGATION.md:80:            optional obj2trimesh() + trimesh.poses.compute_stable_poses()
+docs/NATURE_SHELF_TRINKETS_INVESTIGATION.md:125:- `obj.obj2trimesh(asset)` plus `trimesh.poses.compute_stable_poses(mesh)`:
+docs/NATURE_SHELF_TRINKETS_INVESTIGATION.md:394:the slowest `compute_stable_poses()` rows, while `CoralFactory` produced the
+docs/NATURE_SHELF_TRINKETS_INVESTIGATION.md:437:`trimesh.poses.compute_stable_poses()` for those three factories and leaves
+docs/NATURE_SHELF_TRINKETS_INVESTIGATION.md:464:skipped_compute_stable_poses
+docs/NATURE_SHELF_TRINKETS_INVESTIGATION.md:577:`trimesh.poses.compute_stable_poses()` behavior first, then `MusselFactory`,
+docs/CPP_STABLE_POSE_AUDIT.md:12:  `trimesh.poses.compute_stable_poses(mesh)` in the audited source tree. Both
+docs/CPP_STABLE_POSE_AUDIT.md:17:  stable pose timing fields, but they do not call `compute_stable_poses` at
+docs/CPP_STABLE_POSE_AUDIT.md:21:- `trimesh.poses.compute_stable_poses` uses `mesh.convex_hull`, optionally
+docs/CPP_STABLE_POSE_AUDIT.md:53:- `compute_stable_poses` start line: `20`
+docs/CPP_STABLE_POSE_AUDIT.md:79:  `compute_stable_poses` when
+docs/CPP_STABLE_POSE_AUDIT.md:99:## 4. Current Trimesh compute_stable_poses Implementation
+docs/CPP_STABLE_POSE_AUDIT.md:110:| `compute_stable_poses` | 20-162 | Public API. Creates convex hull, samples COM, builds toppling graph per sample, aggregates probabilities by rounded face normal, builds transforms, sorts results. |
+docs/CPP_STABLE_POSE_AUDIT.md:115:Inputs to `compute_stable_poses`:
+docs/CPP_STABLE_POSE_AUDIT.md:275:def compute_stable_poses(
+docs/CPP_STABLE_POSE_AUDIT.md:332:  calls to `trimesh.poses.compute_stable_poses` outside the wrapper and
+docs/CPP_STABLE_POSE_AUDIT.md:383:def compute_stable_poses_core(
+docs/CPP_STABLE_POSE_AUDIT.md:495:- `trimesh.poses.compute_stable_poses` consumes global NumPy RNG via
+docs/CPP_STABLE_POSE_AUDIT.md:587:   `trimesh.poses.compute_stable_poses`.
+scripts/analyze_nature_shelf_trinkets.py:63:    "skipped_compute_stable_poses",
+scripts/analyze_nature_shelf_trinkets.py:197:            f"{stats['skipped_compute_stable_poses']},"
+scripts/analyze_nature_shelf_trinkets.py:522:            as_bool(row, "skipped_compute_stable_poses") for row in successful
+scripts/analyze_nature_shelf_trinkets.py:539:    skipped_count = sum(as_bool(row, "skipped_compute_stable_poses") for row in successful)
+scripts/analyze_nature_shelf_trinkets.py:542:    print(f"skipped_compute_stable_poses:  {skipped_count}")
+scripts/analyze_nature_shelf_trinkets.py:577:        stats["skipped_compute"] += int(as_bool(row, "skipped_compute_stable_poses"))
+docs/NEXT_STEPS.md:469:`MusselFactory` were dominated by `compute_stable_poses()` on about `528k`
+docs/NEXT_STEPS.md:472:`compute_stable_poses()` itself.
+docs/NEXT_STEPS.md:528:   `trimesh.poses.compute_stable_poses()` and whether a separate opt-in
+docs/WORKLOG.md:930:`obj2trimesh()` plus `trimesh.poses.compute_stable_poses()` path. When set,
+docs/WORKLOG.md:955:`compute_stable_poses()`, preserves `base_factory.spawn_asset()`, and leaves
+docs/WORKLOG.md:968:skipped_compute_stable_poses
+docs/WORKLOG.md:1177:The slowest `compute_stable_poses()` rows were `ClamFactory` samples. The
+docs/WORKLOG.md:1389:        optional obj2trimesh() + trimesh.poses.compute_stable_poses()
+infinigen/assets/objects/elements/nature_shelf_trinkets/generate.py:64:    "skipped_compute_stable_poses",
+infinigen/assets/objects/elements/nature_shelf_trinkets/generate.py:286:        "skipped_compute_stable_poses": False,
+infinigen/assets/objects/elements/nature_shelf_trinkets/generate.py:393:            stable_poses, probs = trimesh.poses.compute_stable_poses(mesh)
+infinigen/assets/objects/elements/nature_shelf_trinkets/generate.py:465:                    row["skipped_compute_stable_poses"] = True
+infinigen/assets/objects/elements/nature_shelf_trinkets/generate.py:486:                    stable_poses, probs = trimesh.poses.compute_stable_poses(mesh)
+
+=== stable pose refs ===
+docs/LARGESHELF_NODEGROUP_INVESTIGATION.md:13:INFINIGEN_FAST_NATURE_TRINKET_STABLE_POSE=1
+scripts/run_9950x3d_parallel_scene_bench.sh:617:    INFINIGEN_FAST_NATURE_TRINKET_STABLE_POSE=1
+docs/PROFILE_RESULTS.md:124:INFINIGEN_FAST_NATURE_TRINKET_STABLE_POSE=1
+docs/PROFILE_RESULTS.md:366:INFINIGEN_FAST_NATURE_TRINKET_STABLE_POSE=1
+docs/PROFILE_RESULTS.md:390:INFINIGEN_FAST_NATURE_TRINKET_STABLE_POSE=1
+docs/PROFILE_RESULTS.md:415:- `INFINIGEN_FAST_NATURE_TRINKET_STABLE_POSE=1`: fast bbox bottom-align stable
+docs/PROFILE_RESULTS.md:612:INFINIGEN_FAST_NATURE_TRINKET_STABLE_POSE=1
+docs/PROFILE_RESULTS.md:644:| `stable_pose_duration` | `120.248s` | `0.000s` |
+docs/PROFILE_RESULTS.md:789:INFINIGEN_FAST_NATURE_TRINKET_STABLE_POSE=1
+docs/PROFILE_RESULTS.md:805:`trimesh.poses.compute_stable_poses()` only for the three shell factories and
+docs/PROFILE_RESULTS.md:843:| `stable_pose_duration` | `217.894s` | `0.000s` |
+docs/PROFILE_RESULTS.md:890:`obj2trimesh_duration`, `stable_pose_count`,
+docs/PROFILE_RESULTS.md:891:`stable_pose_best_prob`, and a diagnostic
+docs/PROFILE_RESULTS.md:892:`stable_pose_cache_candidate_key`. The key is for analysis only and is not
+docs/PROFILE_RESULTS.md:941:| `stable_pose_duration` | `95.971s` | `54.1%` |
+docs/PROFILE_RESULTS.md:1061:| `stable_pose_duration` | `32.143s` | `67.6%` |
+docs/PROFILE_RESULTS.md:1194:`trimesh.poses.compute_stable_poses`.
+docs/CPP_STABLE_POSE_AUDIT.md:12:  `trimesh.poses.compute_stable_poses(mesh)` in the audited source tree. Both
+docs/CPP_STABLE_POSE_AUDIT.md:17:  stable pose timing fields, but they do not call `compute_stable_poses` at
+docs/CPP_STABLE_POSE_AUDIT.md:21:- `trimesh.poses.compute_stable_poses` uses `mesh.convex_hull`, optionally
+docs/CPP_STABLE_POSE_AUDIT.md:53:- `compute_stable_poses` start line: `20`
+docs/CPP_STABLE_POSE_AUDIT.md:64:The global audit command was saved in `audit_logs/01_stable_pose_refs.log`.
+docs/CPP_STABLE_POSE_AUDIT.md:76:- `generate.py:199-211` defines `_fast_stable_pose_allowed`, currently limited
+docs/CPP_STABLE_POSE_AUDIT.md:79:  `compute_stable_poses` when
+docs/CPP_STABLE_POSE_AUDIT.md:80:  `INFINIGEN_FAST_NATURE_TRINKET_STABLE_POSE` is enabled and the base factory
+docs/CPP_STABLE_POSE_AUDIT.md:83:  `stable_pose_cache_candidate_key` in the profiled path.
+docs/CPP_STABLE_POSE_AUDIT.md:92:  benchmark CSV fields such as `stable_pose_duration`,
+docs/CPP_STABLE_POSE_AUDIT.md:93:  `stable_pose_count`, and `stable_pose_best_prob`.
+docs/CPP_STABLE_POSE_AUDIT.md:95:  `INFINIGEN_FAST_NATURE_TRINKET_STABLE_POSE` must remain upstream of any new
+docs/CPP_STABLE_POSE_AUDIT.md:99:## 4. Current Trimesh compute_stable_poses Implementation
+docs/CPP_STABLE_POSE_AUDIT.md:110:| `compute_stable_poses` | 20-162 | Public API. Creates convex hull, samples COM, builds toppling graph per sample, aggregates probabilities by rounded face normal, builds transforms, sorts results. |
+docs/CPP_STABLE_POSE_AUDIT.md:115:Inputs to `compute_stable_poses`:
+docs/CPP_STABLE_POSE_AUDIT.md:227:profiles in repo docs already identify `stable_pose_duration` as a significant
+docs/CPP_STABLE_POSE_AUDIT.md:269:infinigen/core/util/stable_pose.py
+docs/CPP_STABLE_POSE_AUDIT.md:275:def compute_stable_poses(
+docs/CPP_STABLE_POSE_AUDIT.md:290:INFINIGEN_STABLE_POSE_BACKEND=trimesh|cpp|auto
+docs/CPP_STABLE_POSE_AUDIT.md:291:INFINIGEN_VALIDATE_CPP_STABLE_POSE=1
+docs/CPP_STABLE_POSE_AUDIT.md:292:INFINIGEN_PROFILE_STABLE_POSE=1
+docs/CPP_STABLE_POSE_AUDIT.md:293:INFINIGEN_DISABLE_CPP_STABLE_POSE=1
+docs/CPP_STABLE_POSE_AUDIT.md:299:- `cpp` should be opt-in through `INFINIGEN_STABLE_POSE_BACKEND=cpp`.
+docs/CPP_STABLE_POSE_AUDIT.md:302:- `INFINIGEN_DISABLE_CPP_STABLE_POSE=1` should force the original trimesh path.
+docs/CPP_STABLE_POSE_AUDIT.md:323:  `stable_pose_backend`, `stable_pose_fallback_reason`,
+docs/CPP_STABLE_POSE_AUDIT.md:324:  `stable_pose_canary_pass`, and `stable_pose_cpp_duration`.
+docs/CPP_STABLE_POSE_AUDIT.md:325:- Do not break `INFINIGEN_FAST_NATURE_TRINKET_STABLE_POSE`. That env var is an
+docs/CPP_STABLE_POSE_AUDIT.md:332:  calls to `trimesh.poses.compute_stable_poses` outside the wrapper and
+docs/CPP_STABLE_POSE_AUDIT.md:340:infinigen/core/constraints/cpp/stable_pose_kernels.py
+docs/CPP_STABLE_POSE_AUDIT.md:341:infinigen/core/constraints/cpp/stable_pose_kernels.pyx
+docs/CPP_STABLE_POSE_AUDIT.md:342:tests/test_stable_pose_kernels.py
+docs/CPP_STABLE_POSE_AUDIT.md:363:        name="infinigen.core.constraints.cpp.stable_pose_kernels_cpp",
+docs/CPP_STABLE_POSE_AUDIT.md:364:        sources=["infinigen/core/constraints/cpp/stable_pose_kernels.pyx"],
+docs/CPP_STABLE_POSE_AUDIT.md:383:def compute_stable_poses_core(
+docs/CPP_STABLE_POSE_AUDIT.md:450:context["stable_pose_backend"] = "trimesh"
+docs/CPP_STABLE_POSE_AUDIT.md:451:context["stable_pose_requested_backend"] = requested_backend
+docs/CPP_STABLE_POSE_AUDIT.md:452:context["stable_pose_fallback_reason"] = reason
+docs/CPP_STABLE_POSE_AUDIT.md:495:- `trimesh.poses.compute_stable_poses` consumes global NumPy RNG via
+docs/CPP_STABLE_POSE_AUDIT.md:542:  --output_folder outputs/bench_cpp_stable_pose_ab/baseline
+docs/CPP_STABLE_POSE_AUDIT.md:549:INFINIGEN_STABLE_POSE_BACKEND=cpp \
+docs/CPP_STABLE_POSE_AUDIT.md:550:INFINIGEN_VALIDATE_CPP_STABLE_POSE=1 \
+docs/CPP_STABLE_POSE_AUDIT.md:554:  --output_folder outputs/bench_cpp_stable_pose_ab/candidate_cpp
+docs/CPP_STABLE_POSE_AUDIT.md:574:- `stable_pose_duration` drops materially in profiled rows.
+docs/CPP_STABLE_POSE_AUDIT.md:582:1. Add `infinigen/core/util/stable_pose.py` wrapper, defaulting to trimesh, with
+docs/CPP_STABLE_POSE_AUDIT.md:587:   `trimesh.poses.compute_stable_poses`.
+docs/CPP_STABLE_POSE_AUDIT.md:588:4. Add `stable_pose_kernels.py` and `.pyx` skeleton, extension registration in
+docs/COMMANDS.md:57:INFINIGEN_FAST_NATURE_TRINKET_STABLE_POSE=1
+docs/COMMANDS.md:260:INFINIGEN_FAST_NATURE_TRINKET_STABLE_POSE=1
+docs/COMMANDS.md:349:INFINIGEN_FAST_NATURE_TRINKET_STABLE_POSE=1
+docs/COMMANDS.md:723:INFINIGEN_FAST_NATURE_TRINKET_STABLE_POSE=1
+docs/COMMANDS.md:753:INFINIGEN_FAST_NATURE_TRINKET_STABLE_POSE=1 \
+docs/COMMANDS.md:773:INFINIGEN_FAST_NATURE_TRINKET_STABLE_POSE=1 \
+docs/COMMANDS.md:881:INFINIGEN_FAST_NATURE_TRINKET_STABLE_POSE=1
+scripts/run_isaac_static_optimized_10room.sh:20:export INFINIGEN_FAST_NATURE_TRINKET_STABLE_POSE="${INFINIGEN_FAST_NATURE_TRINKET_STABLE_POSE:-1}"
+scripts/run_isaac_static_optimized_10room.sh:41:  echo "INFINIGEN_FAST_NATURE_TRINKET_STABLE_POSE=${INFINIGEN_FAST_NATURE_TRINKET_STABLE_POSE}"
+docs/NATURE_SHELF_TRINKETS_INVESTIGATION.md:11:INFINIGEN_FAST_NATURE_TRINKET_STABLE_POSE=1
+docs/NATURE_SHELF_TRINKETS_INVESTIGATION.md:34:INFINIGEN_FAST_NATURE_TRINKET_STABLE_POSE=1
+docs/NATURE_SHELF_TRINKETS_INVESTIGATION.md:80:            optional obj2trimesh() + trimesh.poses.compute_stable_poses()
+docs/NATURE_SHELF_TRINKETS_INVESTIGATION.md:125:- `obj.obj2trimesh(asset)` plus `trimesh.poses.compute_stable_poses(mesh)`:
+docs/NATURE_SHELF_TRINKETS_INVESTIGATION.md:303:| `stable_pose_duration` | `32.143s` | `67.6%` |
+docs/NATURE_SHELF_TRINKETS_INVESTIGATION.md:334:stable_pose_count
+docs/NATURE_SHELF_TRINKETS_INVESTIGATION.md:335:stable_pose_best_prob
+docs/NATURE_SHELF_TRINKETS_INVESTIGATION.md:336:stable_pose_cache_candidate_key
+docs/NATURE_SHELF_TRINKETS_INVESTIGATION.md:366:| `stable_pose_duration` | `95.971s` | `54.1%` |
+docs/NATURE_SHELF_TRINKETS_INVESTIGATION.md:390:Across the `75` non-creature stable-pose rows, `stable_pose_duration` and
+docs/NATURE_SHELF_TRINKETS_INVESTIGATION.md:391:face / vertex count had low correlation (`0.131`). `stable_pose_duration` and
+docs/NATURE_SHELF_TRINKETS_INVESTIGATION.md:392:`stable_pose_count` had a modest correlation (`0.275`). This suggests that
+docs/NATURE_SHELF_TRINKETS_INVESTIGATION.md:394:the slowest `compute_stable_poses()` rows, while `CoralFactory` produced the
+docs/NATURE_SHELF_TRINKETS_INVESTIGATION.md:416:INFINIGEN_FAST_NATURE_TRINKET_STABLE_POSE=1
+docs/NATURE_SHELF_TRINKETS_INVESTIGATION.md:437:`trimesh.poses.compute_stable_poses()` for those three factories and leaves
+docs/NATURE_SHELF_TRINKETS_INVESTIGATION.md:460:fast_stable_pose_enabled
+docs/NATURE_SHELF_TRINKETS_INVESTIGATION.md:461:fast_stable_pose_used
+docs/NATURE_SHELF_TRINKETS_INVESTIGATION.md:462:stable_pose_mode
+docs/NATURE_SHELF_TRINKETS_INVESTIGATION.md:463:fast_stable_pose_duration
+docs/NATURE_SHELF_TRINKETS_INVESTIGATION.md:464:skipped_compute_stable_poses
+docs/NATURE_SHELF_TRINKETS_INVESTIGATION.md:490:| `stable_pose_duration` | `217.894s` | `0.000s` |
+docs/NATURE_SHELF_TRINKETS_INVESTIGATION.md:520:| `stable_pose_duration` | `120.248s` | `0.000s` |
+docs/NATURE_SHELF_TRINKETS_INVESTIGATION.md:577:`trimesh.poses.compute_stable_poses()` behavior first, then `MusselFactory`,
+scripts/analyze_nature_shelf_trinkets.py:29:    "stable_pose_duration",
+scripts/analyze_nature_shelf_trinkets.py:30:    "fast_stable_pose_duration",
+scripts/analyze_nature_shelf_trinkets.py:45:    "stable_pose_duration",
+scripts/analyze_nature_shelf_trinkets.py:46:    "fast_stable_pose_duration",
+scripts/analyze_nature_shelf_trinkets.py:60:CACHE_KEY_FIELD = "stable_pose_cache_candidate_key"
+scripts/analyze_nature_shelf_trinkets.py:62:    "fast_stable_pose_used",
+scripts/analyze_nature_shelf_trinkets.py:63:    "skipped_compute_stable_poses",
+scripts/analyze_nature_shelf_trinkets.py:190:            f"{stats['stable_pose_duration_total']:.6f},"
+scripts/analyze_nature_shelf_trinkets.py:191:            f"{average(stats, 'stable_pose_duration_total'):.6f},"
+scripts/analyze_nature_shelf_trinkets.py:192:            f"{stats['stable_pose_duration_max']:.6f},"
+scripts/analyze_nature_shelf_trinkets.py:193:            f"{stats['fast_stable_pose_duration_total']:.6f},"
+scripts/analyze_nature_shelf_trinkets.py:194:            f"{average(stats, 'fast_stable_pose_duration_total'):.6f},"
+scripts/analyze_nature_shelf_trinkets.py:195:            f"{stats['fast_stable_pose_duration_max']:.6f},"
+scripts/analyze_nature_shelf_trinkets.py:196:            f"{stats['fast_stable_pose_used']},"
+scripts/analyze_nature_shelf_trinkets.py:197:            f"{stats['skipped_compute_stable_poses']},"
+scripts/analyze_nature_shelf_trinkets.py:226:        key=lambda item: item[1]["stable_pose_duration_total"],
+scripts/analyze_nature_shelf_trinkets.py:231:            stats["stable_pose_duration_total"] / stats["count"]
+scripts/analyze_nature_shelf_trinkets.py:245:            f"{stats['stable_pose_duration_total']:.6f},"
+scripts/analyze_nature_shelf_trinkets.py:282:def print_stable_pose_mesh_summary(successful: list[dict]) -> None:
+scripts/analyze_nature_shelf_trinkets.py:286:        if as_float(row, "stable_pose_duration") > 0
+scripts/analyze_nature_shelf_trinkets.py:290:    stable_total = sum(as_float(row, "stable_pose_duration") for row in stable_rows)
+scripts/analyze_nature_shelf_trinkets.py:295:    pose_counts = [as_int(row, "stable_pose_count") for row in stable_rows]
+scripts/analyze_nature_shelf_trinkets.py:296:    stable_durations = [as_float(row, "stable_pose_duration") for row in stable_rows]
+scripts/analyze_nature_shelf_trinkets.py:300:    print(f"stable_pose_rows: {len(stable_rows)}")
+scripts/analyze_nature_shelf_trinkets.py:301:    print(f"stable_pose_total: {fmt_seconds(stable_total)}")
+scripts/analyze_nature_shelf_trinkets.py:303:        f"stable_pose_avg:   "
+scripts/analyze_nature_shelf_trinkets.py:306:    print(f"stable_pose_max:   {fmt_seconds(max(stable_durations, default=0.0))}")
+scripts/analyze_nature_shelf_trinkets.py:325:        f"avg_stable_pose_count: "
+scripts/analyze_nature_shelf_trinkets.py:327:        f"max_stable_pose_count={max(pose_counts, default=0):7d}"
+scripts/analyze_nature_shelf_trinkets.py:330:        "corr(stable_pose_duration, vertices): "
+scripts/analyze_nature_shelf_trinkets.py:334:        "corr(stable_pose_duration, faces):    "
+scripts/analyze_nature_shelf_trinkets.py:338:        "corr(stable_pose_duration, pose_count): "
+scripts/analyze_nature_shelf_trinkets.py:343:            "stable_pose_seconds_per_1k_faces: "
+scripts/analyze_nature_shelf_trinkets.py:354:def print_slowest_stable_pose(successful: list[dict], limit: int = 20) -> None:
+scripts/analyze_nature_shelf_trinkets.py:355:    print("Slowest stable_pose top 20")
+scripts/analyze_nature_shelf_trinkets.py:358:        "stable_pose,obj2trimesh,base_factory,vertices,faces,edges,"
+scripts/analyze_nature_shelf_trinkets.py:359:        "bbox_extent,stable_pose_count,best_prob"
+scripts/analyze_nature_shelf_trinkets.py:362:        row for row in successful if as_float(row, "stable_pose_duration") > 0
+scripts/analyze_nature_shelf_trinkets.py:366:        key=lambda item: as_float(item, "stable_pose_duration"),
+scripts/analyze_nature_shelf_trinkets.py:370:            f"{as_float(row, 'stable_pose_duration'):.6f},"
+scripts/analyze_nature_shelf_trinkets.py:377:            f"{as_int(row, 'stable_pose_count')},"
+scripts/analyze_nature_shelf_trinkets.py:378:            f"{as_float(row, 'stable_pose_best_prob'):.6f}"
+scripts/analyze_nature_shelf_trinkets.py:387:def print_stable_pose_cache_key_summary(successful: list[dict]) -> Counter:
+scripts/analyze_nature_shelf_trinkets.py:417:    stable_pose_total = substage_totals.get("stable_pose_duration", 0.0)
+scripts/analyze_nature_shelf_trinkets.py:422:    stable_pose_ratio = ratio(stable_pose_total, total_duration)
+scripts/analyze_nature_shelf_trinkets.py:423:    stable_pose_pipeline_ratio = ratio(obj2_total + stable_pose_total, total_duration)
+scripts/analyze_nature_shelf_trinkets.py:439:        "stable_pose ratio: "
+scripts/analyze_nature_shelf_trinkets.py:440:        f"{stable_pose_ratio:.1%} "
+scripts/analyze_nature_shelf_trinkets.py:441:        f"({fmt_seconds(stable_pose_total)} / {fmt_seconds(total_duration)})"
+scripts/analyze_nature_shelf_trinkets.py:444:        "stable_pose pipeline ratio: "
+scripts/analyze_nature_shelf_trinkets.py:445:        f"{stable_pose_pipeline_ratio:.1%} "
+scripts/analyze_nature_shelf_trinkets.py:446:        f"({fmt_seconds(obj2_total + stable_pose_total)} / "
+scripts/analyze_nature_shelf_trinkets.py:450:        "stable_pose_pipeline_is_primary: "
+scripts/analyze_nature_shelf_trinkets.py:451:        f"{'yes' if stable_pose_pipeline_ratio >= 0.5 else 'no'}"
+scripts/analyze_nature_shelf_trinkets.py:463:        "stable_pose_is_primary: "
+scripts/analyze_nature_shelf_trinkets.py:464:        f"{'yes' if stable_pose_ratio >= 0.5 else 'no'}"
+scripts/analyze_nature_shelf_trinkets.py:495:def stable_pose_mode(row: dict) -> str:
+scripts/analyze_nature_shelf_trinkets.py:496:    mode = row.get("stable_pose_mode", "")
+scripts/analyze_nature_shelf_trinkets.py:499:    if as_bool(row, "fast_stable_pose_used"):
+scripts/analyze_nature_shelf_trinkets.py:511:        "stable_pose_duration": sum(
+scripts/analyze_nature_shelf_trinkets.py:512:            as_float(row, "stable_pose_duration") for row in successful
+scripts/analyze_nature_shelf_trinkets.py:517:        "fast_stable_pose_duration": sum(
+scripts/analyze_nature_shelf_trinkets.py:518:            as_float(row, "fast_stable_pose_duration") for row in successful
+scripts/analyze_nature_shelf_trinkets.py:520:        "fast_used": sum(as_bool(row, "fast_stable_pose_used") for row in successful),
+scripts/analyze_nature_shelf_trinkets.py:522:            as_bool(row, "skipped_compute_stable_poses") for row in successful
+scripts/analyze_nature_shelf_trinkets.py:537:    fast_enabled_count = sum(as_bool(row, "fast_stable_pose_enabled") for row in successful)
+scripts/analyze_nature_shelf_trinkets.py:538:    fast_used_count = sum(as_bool(row, "fast_stable_pose_used") for row in successful)
+scripts/analyze_nature_shelf_trinkets.py:539:    skipped_count = sum(as_bool(row, "skipped_compute_stable_poses") for row in successful)
+scripts/analyze_nature_shelf_trinkets.py:540:    print(f"fast_stable_pose_enabled rows: {fast_enabled_count}")
+scripts/analyze_nature_shelf_trinkets.py:541:    print(f"fast_stable_pose_used rows:    {fast_used_count}")
+scripts/analyze_nature_shelf_trinkets.py:542:    print(f"skipped_compute_stable_poses:  {skipped_count}")
+scripts/analyze_nature_shelf_trinkets.py:544:        "mode,count,total,avg,stable_pose_total,obj2trimesh_total,"
+scripts/analyze_nature_shelf_trinkets.py:549:        by_mode[stable_pose_mode(row)].append(row)
+scripts/analyze_nature_shelf_trinkets.py:557:            f"{sum(as_float(row, 'stable_pose_duration') for row in rows):.6f},"
+scripts/analyze_nature_shelf_trinkets.py:559:            f"{sum(as_float(row, 'fast_stable_pose_duration') for row in rows):.6f}"
+scripts/analyze_nature_shelf_trinkets.py:571:        stats["stable_pose_duration"] += as_float(row, "stable_pose_duration")
+scripts/analyze_nature_shelf_trinkets.py:573:        stats["fast_stable_pose_duration"] += as_float(
+scripts/analyze_nature_shelf_trinkets.py:574:            row, "fast_stable_pose_duration"
+scripts/analyze_nature_shelf_trinkets.py:576:        stats["fast_used"] += int(as_bool(row, "fast_stable_pose_used"))
+scripts/analyze_nature_shelf_trinkets.py:577:        stats["skipped_compute"] += int(as_bool(row, "skipped_compute_stable_poses"))
+scripts/analyze_nature_shelf_trinkets.py:598:        "stable_pose_duration",
+scripts/analyze_nature_shelf_trinkets.py:600:        "fast_stable_pose_duration",
+scripts/analyze_nature_shelf_trinkets.py:654:            f"{base_stats['stable_pose_duration']:.6f},"
+scripts/analyze_nature_shelf_trinkets.py:655:            f"{cand_stats['stable_pose_duration']:.6f},"
+scripts/analyze_nature_shelf_trinkets.py:742:    print_stable_pose_mesh_summary(successful)
+scripts/analyze_nature_shelf_trinkets.py:743:    cache_counts = print_stable_pose_cache_key_summary(successful)
+scripts/analyze_nature_shelf_trinkets.py:744:    print_slowest_stable_pose(successful)
+scripts/analyze_nature_shelf_trinkets.py:831:    stable_pose_pipeline_total = substage_totals.get(
+scripts/analyze_nature_shelf_trinkets.py:832:        "stable_pose_duration", 0.0
+scripts/analyze_nature_shelf_trinkets.py:834:    if ratio(stable_pose_pipeline_total, total_duration) >= 0.5:
+scripts/run_9950x3d_production_scene_queue.sh:208:    INFINIGEN_FAST_NATURE_TRINKET_STABLE_POSE=1
+scripts/run_9950x3d_production_scene_queue.sh:289:    echo "INFINIGEN_FAST_NATURE_TRINKET_STABLE_POSE=1"
+scripts/bench_nature_shelf_trinkets_factory.py:24:FAST_STABLE_POSE_ENV_VAR = "INFINIGEN_FAST_NATURE_TRINKET_STABLE_POSE"
+scripts/bench_nature_shelf_trinkets_factory.py:207:    print(f"fast_stable_pose_env: {os.environ.get(FAST_STABLE_POSE_ENV_VAR, '')}")
+docs/WORKLOG.md:56:INFINIGEN_FAST_NATURE_TRINKET_STABLE_POSE=1
+docs/WORKLOG.md:345:INFINIGEN_FAST_NATURE_TRINKET_STABLE_POSE=1
+docs/WORKLOG.md:713:INFINIGEN_FAST_NATURE_TRINKET_STABLE_POSE=1
+docs/WORKLOG.md:755:INFINIGEN_FAST_NATURE_TRINKET_STABLE_POSE=1
+docs/WORKLOG.md:926:INFINIGEN_FAST_NATURE_TRINKET_STABLE_POSE=1
+docs/WORKLOG.md:930:`obj2trimesh()` plus `trimesh.poses.compute_stable_poses()` path. When set,
+docs/WORKLOG.md:955:`compute_stable_poses()`, preserves `base_factory.spawn_asset()`, and leaves
+docs/WORKLOG.md:964:fast_stable_pose_enabled
+docs/WORKLOG.md:965:fast_stable_pose_used
+docs/WORKLOG.md:966:stable_pose_mode
+docs/WORKLOG.md:967:fast_stable_pose_duration
+docs/WORKLOG.md:968:skipped_compute_stable_poses
+docs/WORKLOG.md:1015:| `stable_pose_duration` | `217.894s` | `0.000s` |
+docs/WORKLOG.md:1054:INFINIGEN_FAST_NATURE_TRINKET_STABLE_POSE=1
+docs/WORKLOG.md:1091:stable_pose_count
+docs/WORKLOG.md:1092:stable_pose_best_prob
+docs/WORKLOG.md:1093:stable_pose_cache_candidate_key
+docs/WORKLOG.md:1115:extent and pose count, and repeated `stable_pose_cache_candidate_key` signals.
+docs/WORKLOG.md:1150:| `stable_pose_duration` | `95.971s` | `54.1%` |
+docs/WORKLOG.md:1175:and `599,225` faces. Correlation between `stable_pose_duration` and vertex /
+docs/WORKLOG.md:1176:face count was only `0.131`; correlation with `stable_pose_count` was `0.275`.
+docs/WORKLOG.md:1177:The slowest `compute_stable_poses()` rows were `ClamFactory` samples. The
+docs/WORKLOG.md:1262:/ max duration, `base_factory_spawn_duration`, `stable_pose_duration`,
+docs/WORKLOG.md:1265:datablock creation top lists, and whether `stable_pose` or
+docs/WORKLOG.md:1317:| `stable_pose_duration` | `32.143s` | `67.6%` |
+docs/WORKLOG.md:1333:In this 30-sample targeted benchmark, `stable_pose_duration` is the primary
+docs/WORKLOG.md:1389:        optional obj2trimesh() + trimesh.poses.compute_stable_poses()
+docs/EQUIVALENCE_TESTING.md:27:INFINIGEN_FAST_NATURE_TRINKET_STABLE_POSE=1
+docs/EQUIVALENCE_TESTING.md:47:  `INFINIGEN_FAST_NATURE_TRINKET_STABLE_POSE=1`
+docs/NEXT_STEPS.md:46:INFINIGEN_FAST_NATURE_TRINKET_STABLE_POSE=1
+docs/NEXT_STEPS.md:203:INFINIGEN_FAST_NATURE_TRINKET_STABLE_POSE=1
+docs/NEXT_STEPS.md:300:INFINIGEN_FAST_NATURE_TRINKET_STABLE_POSE=1
+docs/NEXT_STEPS.md:322:INFINIGEN_FAST_NATURE_TRINKET_STABLE_POSE=1
+docs/NEXT_STEPS.md:426:INFINIGEN_FAST_NATURE_TRINKET_STABLE_POSE=1
+docs/NEXT_STEPS.md:461:walltime result. In that sample, `stable_pose_duration` accounted for
+docs/NEXT_STEPS.md:469:`MusselFactory` were dominated by `compute_stable_poses()` on about `528k`
+docs/NEXT_STEPS.md:472:`compute_stable_poses()` itself.
+docs/NEXT_STEPS.md:474:The diagnostic `stable_pose_cache_candidate_key` had `75` keys, `75` unique
+docs/NEXT_STEPS.md:483:INFINIGEN_FAST_NATURE_TRINKET_STABLE_POSE=1
+docs/NEXT_STEPS.md:519:   `INFINIGEN_FAST_NATURE_TRINKET_STABLE_POSE=1`, and
+docs/NEXT_STEPS.md:528:   `trimesh.poses.compute_stable_poses()` and whether a separate opt-in
+infinigen/assets/objects/elements/nature_shelf_trinkets/generate.py:33:FAST_NATURE_TRINKET_STABLE_POSE_ENV_VAR = (
+infinigen/assets/objects/elements/nature_shelf_trinkets/generate.py:34:    "INFINIGEN_FAST_NATURE_TRINKET_STABLE_POSE"
+infinigen/assets/objects/elements/nature_shelf_trinkets/generate.py:56:    "stable_pose_duration",
+infinigen/assets/objects/elements/nature_shelf_trinkets/generate.py:57:    "fast_stable_pose_duration",
+infinigen/assets/objects/elements/nature_shelf_trinkets/generate.py:61:    "fast_stable_pose_enabled",
+infinigen/assets/objects/elements/nature_shelf_trinkets/generate.py:62:    "fast_stable_pose_used",
+infinigen/assets/objects/elements/nature_shelf_trinkets/generate.py:63:    "stable_pose_mode",
+infinigen/assets/objects/elements/nature_shelf_trinkets/generate.py:64:    "skipped_compute_stable_poses",
+infinigen/assets/objects/elements/nature_shelf_trinkets/generate.py:77:    "stable_pose_count",
+infinigen/assets/objects/elements/nature_shelf_trinkets/generate.py:78:    "stable_pose_best_prob",
+infinigen/assets/objects/elements/nature_shelf_trinkets/generate.py:79:    "stable_pose_cache_candidate_key",
+infinigen/assets/objects/elements/nature_shelf_trinkets/generate.py:119:def _fast_nature_trinket_stable_pose_enabled() -> bool:
+infinigen/assets/objects/elements/nature_shelf_trinkets/generate.py:120:    return _env_truthy(FAST_NATURE_TRINKET_STABLE_POSE_ENV_VAR)
+infinigen/assets/objects/elements/nature_shelf_trinkets/generate.py:199:def _fast_stable_pose_allowed(base_factory) -> bool:
+infinigen/assets/objects/elements/nature_shelf_trinkets/generate.py:253:    row["stable_pose_cache_candidate_key"] = (
+infinigen/assets/objects/elements/nature_shelf_trinkets/generate.py:278:        "stable_pose_duration": 0.0,
+infinigen/assets/objects/elements/nature_shelf_trinkets/generate.py:279:        "fast_stable_pose_duration": 0.0,
+infinigen/assets/objects/elements/nature_shelf_trinkets/generate.py:283:        "fast_stable_pose_enabled": _fast_nature_trinket_stable_pose_enabled(),
+infinigen/assets/objects/elements/nature_shelf_trinkets/generate.py:284:        "fast_stable_pose_used": False,
+infinigen/assets/objects/elements/nature_shelf_trinkets/generate.py:285:        "stable_pose_mode": "original",
+infinigen/assets/objects/elements/nature_shelf_trinkets/generate.py:286:        "skipped_compute_stable_poses": False,
+infinigen/assets/objects/elements/nature_shelf_trinkets/generate.py:299:        "stable_pose_count": "",
+infinigen/assets/objects/elements/nature_shelf_trinkets/generate.py:300:        "stable_pose_best_prob": "",
+infinigen/assets/objects/elements/nature_shelf_trinkets/generate.py:301:        "stable_pose_cache_candidate_key": "",
+infinigen/assets/objects/elements/nature_shelf_trinkets/generate.py:386:        elif _fast_nature_trinket_stable_pose_enabled() and _fast_stable_pose_allowed(
+infinigen/assets/objects/elements/nature_shelf_trinkets/generate.py:393:            stable_poses, probs = trimesh.poses.compute_stable_poses(mesh)
+infinigen/assets/objects/elements/nature_shelf_trinkets/generate.py:394:            stable_pose = stable_poses[np.argmax(probs)]
+infinigen/assets/objects/elements/nature_shelf_trinkets/generate.py:395:            asset.rotation_euler = mathutils.Matrix(stable_pose[:3, :3]).to_euler()
+infinigen/assets/objects/elements/nature_shelf_trinkets/generate.py:458:                _fast_nature_trinket_stable_pose_enabled()
+infinigen/assets/objects/elements/nature_shelf_trinkets/generate.py:459:                and _fast_stable_pose_allowed(self.base_factory)
+infinigen/assets/objects/elements/nature_shelf_trinkets/generate.py:463:                    row["fast_stable_pose_used"] = True
+infinigen/assets/objects/elements/nature_shelf_trinkets/generate.py:464:                    row["stable_pose_mode"] = "fast_bbox_bottom_align"
+infinigen/assets/objects/elements/nature_shelf_trinkets/generate.py:465:                    row["skipped_compute_stable_poses"] = True
+infinigen/assets/objects/elements/nature_shelf_trinkets/generate.py:468:                        row, "fast_stable_pose_duration", step_start_time
+infinigen/assets/objects/elements/nature_shelf_trinkets/generate.py:486:                    stable_poses, probs = trimesh.poses.compute_stable_poses(mesh)
+infinigen/assets/objects/elements/nature_shelf_trinkets/generate.py:487:                    row["stable_pose_count"] = len(stable_poses)
+infinigen/assets/objects/elements/nature_shelf_trinkets/generate.py:489:                    row["stable_pose_best_prob"] = float(probs[best_idx])
+infinigen/assets/objects/elements/nature_shelf_trinkets/generate.py:490:                    stable_pose = stable_poses[best_idx]
+infinigen/assets/objects/elements/nature_shelf_trinkets/generate.py:492:                        stable_pose[:3, :3]
+infinigen/assets/objects/elements/nature_shelf_trinkets/generate.py:495:                    _record_duration(row, "stable_pose_duration", step_start_time)
+
+=== trimesh poses refs ===
+docs/PROFILE_RESULTS.md:805:`trimesh.poses.compute_stable_poses()` only for the three shell factories and
+docs/PROFILE_RESULTS.md:1194:`trimesh.poses.compute_stable_poses`.
+docs/CPP_STABLE_POSE_AUDIT.md:12:  `trimesh.poses.compute_stable_poses(mesh)` in the audited source tree. Both
+docs/CPP_STABLE_POSE_AUDIT.md:21:- `trimesh.poses.compute_stable_poses` uses `mesh.convex_hull`, optionally
+docs/CPP_STABLE_POSE_AUDIT.md:51:- `trimesh.poses` file:
+docs/CPP_STABLE_POSE_AUDIT.md:332:  calls to `trimesh.poses.compute_stable_poses` outside the wrapper and
+docs/CPP_STABLE_POSE_AUDIT.md:495:- `trimesh.poses.compute_stable_poses` consumes global NumPy RNG via
+docs/CPP_STABLE_POSE_AUDIT.md:587:   `trimesh.poses.compute_stable_poses`.
+docs/NATURE_SHELF_TRINKETS_INVESTIGATION.md:80:            optional obj2trimesh() + trimesh.poses.compute_stable_poses()
+docs/NATURE_SHELF_TRINKETS_INVESTIGATION.md:125:- `obj.obj2trimesh(asset)` plus `trimesh.poses.compute_stable_poses(mesh)`:
+docs/NATURE_SHELF_TRINKETS_INVESTIGATION.md:437:`trimesh.poses.compute_stable_poses()` for those three factories and leaves
+docs/NATURE_SHELF_TRINKETS_INVESTIGATION.md:577:`trimesh.poses.compute_stable_poses()` behavior first, then `MusselFactory`,
+docs/WORKLOG.md:930:`obj2trimesh()` plus `trimesh.poses.compute_stable_poses()` path. When set,
+docs/WORKLOG.md:1389:        optional obj2trimesh() + trimesh.poses.compute_stable_poses()
+docs/NEXT_STEPS.md:528:   `trimesh.poses.compute_stable_poses()` and whether a separate opt-in
+infinigen/assets/objects/elements/nature_shelf_trinkets/generate.py:393:            stable_poses, probs = trimesh.poses.compute_stable_poses(mesh)
+infinigen/assets/objects/elements/nature_shelf_trinkets/generate.py:486:                    stable_poses, probs = trimesh.poses.compute_stable_poses(mesh)

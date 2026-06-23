@@ -1,0 +1,3 @@
+convex_hull function: /home/ubuntu22/miniconda3/envs/infinigen/lib/python3.11/site-packages/trimesh/convex.py 32
+points_to_barycentric: /home/ubuntu22/miniconda3/envs/infinigen/lib/python3.11/site-packages/trimesh/triangles.py 468
+center_mass property source file: /home/ubuntu22/miniconda3/envs/infinigen/lib/python3.11/site-packages/trimesh/base.py 579

@@ -1,0 +1,96 @@
+     1	# Copyright (C) 2023, Princeton University.
+     2	# This source code is licensed under the BSD 3-Clause license found in the LICENSE file in the root directory
+     3	# of this source tree.
+     4	
+     5	# Authors: Alexander Raistrick
+     6	
+     7	# Acknowledgement: This file draws inspiration from https://github.com/pytorch/pytorch/blob/main/setup.py
+     8	
+     9	
+    10	import os
+    11	import subprocess
+    12	import sys
+    13	from pathlib import Path
+    14	
+    15	import numpy
+    16	from Cython.Build import cythonize
+    17	from setuptools import Extension, setup
+    18	
+    19	cwd = Path(__file__).parent
+    20	
+    21	str_true = "True"
+    22	MINIMAL_INSTALL = os.environ.get("INFINIGEN_MINIMAL_INSTALL") == str_true
+    23	BUILD_TERRAIN = os.environ.get("INFINIGEN_INSTALL_TERRAIN", str_true) == str_true
+    24	BUILD_OPENGL = os.environ.get("INFINIGEN_INSTALL_CUSTOMGT", "False") == str_true
+    25	BUILD_BNURBS = os.environ.get("INFINIGEN_INSTALL_BNURBS", "False") == str_true
+    26	DISABLE_GEOMETRY_CPP = (
+    27	    os.environ.get("INFINIGEN_DISABLE_GEOMETRY_CPP", "False") == str_true
+    28	)
+    29	
+    30	dont_build_steps = ["clean", "egg_info", "dist_info", "sdist", "--help"]
+    31	is_build_step = not any(x in sys.argv[1] for x in dont_build_steps)
+    32	
+    33	
+    34	def ensure_submodules():
+    35	    # Inspired by https://github.com/pytorch/pytorch/blob/main/setup.py
+    36	
+    37	    with (cwd / ".gitmodules").open() as f:
+    38	        submodule_folders = [
+    39	            cwd / line.split("=", 1)[1].strip()
+    40	            for line in f.readlines()
+    41	            if line.strip().startswith("path")
+    42	        ]
+    43	
+    44	    if any(not p.exists() or not any(p.iterdir()) for p in submodule_folders):
+    45	        subprocess.run(
+    46	            ["git", "submodule", "update", "--init", "--recursive"], cwd=cwd, check=True
+    47	        )
+    48	
+    49	
+    50	if not MINIMAL_INSTALL:
+    51	    ensure_submodules()
+    52	
+    53	# inspired by https://github.com/pytorch/pytorch/blob/161ea463e690dcb91a30faacbf7d100b98524b6b/setup.py#L290
+    54	# theirs seems to not exclude dist_info but this causes duplicate compiling in my tests
+    55	if is_build_step and not MINIMAL_INSTALL:
+    56	    if BUILD_TERRAIN:
+    57	        subprocess.run(["make", "terrain"], cwd=cwd, check=True)
+    58	    if BUILD_OPENGL:
+    59	        subprocess.run(["make", "customgt"], cwd=cwd, check=True)
+    60	
+    61	cython_extensions = []
+    62	
+    63	if not DISABLE_GEOMETRY_CPP:
+    64	    cython_extensions.append(
+    65	        Extension(
+    66	            name="infinigen.core.constraints.cpp.geometry_kernels_cpp",
+    67	            sources=["infinigen/core/constraints/cpp/geometry_kernels.pyx"],
+    68	            include_dirs=[numpy.get_include()],
+    69	            language="c++",
+    70	        )
+    71	    )
+    72	
+    73	if not MINIMAL_INSTALL:
+    74	    if BUILD_BNURBS:
+    75	        cython_extensions.append(
+    76	            Extension(
+    77	                name="bnurbs",
+    78	                sources=["infinigen/assets/utils/geometry/cpp_utils/bnurbs.pyx"],
+    79	                include_dirs=[numpy.get_include()],
+    80	            )
+    81	        )
+    82	    if BUILD_TERRAIN:
+    83	        cython_extensions.append(
+    84	            Extension(
+    85	                name="infinigen.terrain.marching_cubes",
+    86	                sources=[
+    87	                    "infinigen/terrain/marching_cubes/_marching_cubes_lewiner_cy.pyx"
+    88	                ],
+    89	                include_dirs=[numpy.get_include()],
+    90	            )
+    91	        )
+    92	
+    93	setup(
+    94	    ext_modules=[*cythonize(cython_extensions)]
+    95	    # other opts come from pyproject.toml
+    96	)

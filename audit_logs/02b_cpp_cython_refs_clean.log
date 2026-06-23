@@ -1,0 +1,59 @@
+=== setup / cython refs, excluding generated geometry_kernels.cpp ===
+setup.py:16:from Cython.Build import cythonize
+setup.py:65:        Extension(
+setup.py:66:            name="infinigen.core.constraints.cpp.geometry_kernels_cpp",
+setup.py:67:            sources=["infinigen/core/constraints/cpp/geometry_kernels.pyx"],
+setup.py:69:            language="c++",
+setup.py:76:            Extension(
+setup.py:78:                sources=["infinigen/assets/utils/geometry/cpp_utils/bnurbs.pyx"],
+setup.py:84:            Extension(
+setup.py:87:                    "infinigen/terrain/marching_cubes/_marching_cubes_lewiner_cy.pyx"
+setup.py:94:    ext_modules=[*cythonize(cython_extensions)]
+tests/test_geometry_kernels.py:4:from infinigen.core.constraints.cpp import geometry_kernels as kernels
+docs/CPP_STABLE_POSE_AUDIT.md:341:infinigen/core/constraints/cpp/stable_pose_kernels.pyx
+docs/CPP_STABLE_POSE_AUDIT.md:348:  `infinigen.core.constraints.cpp.geometry_kernels_cpp` from
+docs/CPP_STABLE_POSE_AUDIT.md:349:  `infinigen/core/constraints/cpp/geometry_kernels.pyx`.
+docs/CPP_STABLE_POSE_AUDIT.md:350:- `geometry_kernels.py:21-29` imports the compiled extension with broad
+docs/CPP_STABLE_POSE_AUDIT.md:352:- `geometry_kernels.py:69-81` centralizes C++ call/fallback and explicit
+docs/CPP_STABLE_POSE_AUDIT.md:354:- `geometry_kernels.pyx:1` disables Cython bounds/wraparound checks and uses
+docs/CPP_STABLE_POSE_AUDIT.md:356:- `geometry_kernels.pyx:47+` uses typed memoryviews and contiguous NumPy arrays.
+docs/CPP_STABLE_POSE_AUDIT.md:362:    Extension(
+docs/CPP_STABLE_POSE_AUDIT.md:364:        sources=["infinigen/core/constraints/cpp/stable_pose_kernels.pyx"],
+docs/CPP_STABLE_POSE_AUDIT.md:366:        language="c++",
+docs/CPP_STABLE_POSE_AUDIT.md:588:4. Add `stable_pose_kernels.py` and `.pyx` skeleton, extension registration in
+docs/CPP_STABLE_POSE_AUDIT.md:589:   `setup.py`, and import fallback matching `geometry_kernels`.
+docs/COMMANDS.md:564:not compiled, `infinigen.core.constraints.cpp.geometry_kernels` falls back to
+docs/COMMANDS.md:581:from infinigen.core.constraints.cpp import geometry_kernels as g
+docs/COMMANDS.md:589:python -m pytest tests/test_geometry_kernels.py -q
+docs/COMMANDS.md:595:python scripts/bench_geometry_kernels.py
+scripts/bench_geometry_kernels.py:12:from infinigen.core.constraints.cpp import geometry_kernels as kernels
+docs/WORKLOG.md:2866:to skip `infinigen.core.constraints.cpp.geometry_kernels_cpp` while keeping the
+docs/WORKLOG.md:2979:- `infinigen/core/constraints/cpp/geometry_kernels.py`
+docs/WORKLOG.md:2980:- `infinigen/core/constraints/cpp/geometry_kernels.pyx`
+docs/WORKLOG.md:2984:- `tests/test_geometry_kernels.py`
+docs/WORKLOG.md:2985:- `scripts/bench_geometry_kernels.py`
+docs/WORKLOG.md:2989:- `infinigen.core.constraints.cpp.geometry_kernels_cpp`
+docs/NEXT_STEPS.md:950:23. Run `python -m pytest tests/test_geometry_kernels.py -q` and
+docs/NEXT_STEPS.md:951:   `python scripts/bench_geometry_kernels.py` after every kernel change.
+docs/CPP_REWRITE_CANDIDATES.md:61:infinigen.core.constraints.cpp.geometry_kernels_cpp
+infinigen/datagen/customgt/dependencies/stb/tests/caveview/stb_gl.h:77:extern int stbgl_hasExtension(char *ext);
+infinigen/datagen/customgt/dependencies/stb/tests/caveview/stb_gl.h:176:int stbgl_hasExtension(char *ext)
+infinigen/datagen/customgt/dependencies/stb/tests/caveview/stb_gl.h:833:            has_s3tc = stbgl_hasExtension("GL_EXT_texture_compression_s3tc");
+infinigen/datagen/customgt/dependencies/glfw/src/glx_context.c:345:    if (!glXQueryExtension(_glfw.x11.display,
+infinigen/datagen/customgt/dependencies/glfw/src/x11_init.c:626:            XF86VidModeQueryExtension(_glfw.x11.display,
+infinigen/datagen/customgt/dependencies/glfw/src/x11_init.c:645:        if (XQueryExtension(_glfw.x11.display,
+infinigen/datagen/customgt/dependencies/glfw/src/x11_init.c:709:        if (XRRQueryExtension(_glfw.x11.display,
+infinigen/datagen/customgt/dependencies/glfw/src/x11_init.c:796:        if (XineramaQueryExtension(_glfw.x11.display,
+infinigen/datagen/customgt/dependencies/glfw/src/x11_init.c:808:        XkbQueryExtension(_glfw.x11.display,
+infinigen/datagen/customgt/dependencies/glfw/src/x11_init.c:866:        if (XRenderQueryExtension(_glfw.x11.display,
+infinigen/datagen/customgt/dependencies/glfw/src/x11_init.c:897:        if (XShapeQueryExtension(_glfw.x11.display,
+infinigen/core/constraints/cpp/geometry_kernels.py:22:    from . import geometry_kernels_cpp as _cpp
+infinigen/core/constraints/cpp/geometry_kernels.py:78:            "geometry_kernels_cpp extension is not available; "
+
+=== pyx / cpp wrapper files ===
+./scripts/bench_geometry_kernels.py
+./infinigen/core/constraints/cpp/geometry_kernels.pyx
+./infinigen/core/constraints/cpp/geometry_kernels.py
+./infinigen/assets/utils/geometry/cpp_utils/bnurbs.pyx
+./infinigen/terrain/marching_cubes/_marching_cubes_lewiner_cy.pyx
+./tests/test_geometry_kernels.py

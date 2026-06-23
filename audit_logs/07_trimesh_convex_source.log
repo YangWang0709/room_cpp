@@ -1,0 +1,170 @@
+     1	"""
+     2	convex.py
+     3	
+     4	Deal with creating and checking convex objects in 2, 3 and N dimensions.
+     5	
+     6	Convex is defined as:
+     7	1) "Convex, meaning "curving out" or "extending outward" (compare to concave)
+     8	2) having an outline or surface curved like the exterior of a circle or sphere.
+     9	3) (of a polygon) having only interior angles measuring less than 180
+    10	"""
+    11	
+    12	import numpy as np
+    13	
+    14	from .constants import tol
+    15	
+    16	from . import util
+    17	from . import triangles
+    18	
+    19	
+    20	try:
+    21	    from scipy.spatial import ConvexHull
+    22	except ImportError as E:
+    23	    from .exceptions import ExceptionWrapper
+    24	    ConvexHull = ExceptionWrapper(E)
+    25	
+    26	try:
+    27	    from scipy.spatial import QhullError
+    28	except BaseException:
+    29	    QhullError = BaseException
+    30	
+    31	
+    32	def convex_hull(obj, qhull_options='QbB Pp Qt', repair=True):
+    33	    """
+    34	    Get a new Trimesh object representing the convex hull of the
+    35	    current mesh attempting to return a watertight mesh with correct
+    36	    normals.
+    37	
+    38	    Details on qhull options:
+    39	      http://www.qhull.org/html/qh-quick.htm#options
+    40	
+    41	    Arguments
+    42	    --------
+    43	    obj : Trimesh, or (n,3) float
+    44	      Mesh or cartesian points
+    45	    qhull_options : str
+    46	      Options to pass to qhull.
+    47	
+    48	    Returns
+    49	    --------
+    50	    convex : Trimesh
+    51	      Mesh of convex hull
+    52	    """
+    53	    from .base import Trimesh
+    54	
+    55	    if isinstance(obj, Trimesh):
+    56	        points = obj.vertices.view(np.ndarray)
+    57	    else:
+    58	        # will remove subclassing
+    59	        points = np.asarray(obj, dtype=np.float64)
+    60	        if not util.is_shape(points, (-1, 3)):
+    61	            raise ValueError('Object must be Trimesh or (n,3) points!')
+    62	
+    63	    try:
+    64	        hull = ConvexHull(points, qhull_options=qhull_options)
+    65	    except QhullError:
+    66	        util.log.debug(
+    67	            'Failed to compute convex hull: retrying with `QJ`',
+    68	            exc_info=True)
+    69	        # try with "joggle" enabled
+    70	        hull = ConvexHull(points, qhull_options='QJ')
+    71	
+    72	    # hull object doesn't remove unreferenced vertices
+    73	    # create a mask to re- index faces for only referenced vertices
+    74	    vid = np.sort(hull.vertices)
+    75	    mask = np.zeros(len(hull.points), dtype=np.int64)
+    76	    mask[vid] = np.arange(len(vid))
+    77	    # remove unreferenced vertices here
+    78	    faces = mask[hull.simplices].copy()
+    79	    # rescale vertices back to original size
+    80	    vertices = hull.points[vid].copy()
+    81	
+    82	    if not repair:
+    83	        # create the Trimesh object for the convex hull
+    84	        return Trimesh(vertices=vertices,
+    85	                       faces=faces,
+    86	                       process=True,
+    87	                       validate=False)
+    88	
+    89	    # qhull returns faces with random winding
+    90	    # calculate the returned normal of each face
+    91	    crosses = triangles.cross(vertices[faces])
+    92	
+    93	    # qhull returns zero magnitude faces like an asshole
+    94	    normals, valid = util.unitize(crosses, check_valid=True)
+    95	
+    96	    # remove zero magnitude faces
+    97	    faces = faces[valid]
+    98	    crosses = crosses[valid]
+    99	
+   100	    # each triangle area and mean center
+   101	    triangles_area = triangles.area(crosses=crosses, sum=False)
+   102	    triangles_center = vertices[faces].mean(axis=1)
+   103	
+   104	    # since the convex hull is (hopefully) convex, the vector from
+   105	    # the centroid to the center of each face
+   106	    # should have a positive dot product with the normal of that face
+   107	    # if it doesn't it is probably backwards
+   108	    # note that this sometimes gets screwed up by precision issues
+   109	    centroid = np.average(triangles_center,
+   110	                          weights=triangles_area,
+   111	                          axis=0)
+   112	    # a vector from the centroid to a point on each face
+   113	    test_vector = triangles_center - centroid
+   114	    # check the projection against face normals
+   115	    backwards = util.diagonal_dot(normals, test_vector) < 0.0
+   116	
+   117	    # flip the winding outward facing
+   118	    faces[backwards] = np.fliplr(faces[backwards])
+   119	    # flip the normal
+   120	    normals[backwards] *= -1.0
+   121	
+   122	    # save the work we did to the cache so it doesn't have to be recomputed
+   123	    initial_cache = {'triangles_cross': crosses,
+   124	                     'triangles_center': triangles_center,
+   125	                     'area_faces': triangles_area,
+   126	                     'centroid': centroid}
+   127	
+   128	    # create the Trimesh object for the convex hull
+   129	    convex = Trimesh(vertices=vertices,
+   130	                     faces=faces,
+   131	                     face_normals=normals,
+   132	                     initial_cache=initial_cache,
+   133	                     process=True,
+   134	                     validate=False)
+   135	
+   136	    # we did the gross case above, but sometimes precision issues
+   137	    # leave some faces backwards anyway
+   138	    # this call will exit early if the winding is consistent
+   139	    # and if not will fix it by traversing the adjacency graph
+   140	    convex.fix_normals(multibody=False)
+   141	
+   142	    # sometimes the QbB option will cause precision issues
+   143	    # so try the hull again without it and
+   144	    # check for qhull_options is None to avoid infinite recursion
+   145	    if (qhull_options is not None and
+   146	            not convex.is_winding_consistent):
+   147	        return convex_hull(convex, qhull_options=None)
+   148	
+   149	    return convex
+   150	
+   151	
+   152	def adjacency_projections(mesh):
+   153	    """
+   154	    Test if a mesh is convex by projecting the vertices of
+   155	    a triangle onto the normal of its adjacent face.
+   156	
+   157	    Parameters
+   158	    ----------
+   159	    mesh : Trimesh
+   160	      Input geometry
+   161	
+   162	    Returns
+   163	    ----------
+   164	    projection : (len(mesh.face_adjacency),) float
+   165	      Distance of projection of adjacent vertex onto plane
+   166	    """
+   167	    # normals and origins from the first column of face adjacency
+   168	    normals = mesh.face_normals[mesh.face_adjacency[:, 0]]
+   169	    # one of the vertices on the shared edge
+   170	    origins = mesh.vertices[mesh.face_adjacency_edges[:, 0]]

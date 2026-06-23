@@ -1,0 +1,2 @@
+infinigen/assets/objects/elements/nature_shelf_trinkets/generate.py:393:            stable_poses, probs = trimesh.poses.compute_stable_poses(mesh)
+infinigen/assets/objects/elements/nature_shelf_trinkets/generate.py:486:                    stable_poses, probs = trimesh.poses.compute_stable_poses(mesh)

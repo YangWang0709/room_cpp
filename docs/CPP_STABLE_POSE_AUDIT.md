@@ -36,9 +36,13 @@ validation and automatic fallback.
 
 Recorded by `audit_logs/00_state.log`:
 
-- Time: `2026-06-23T22:05:16+08:00`
+- Time: `2026-06-23T22:25:18+08:00`
 - Source directory: `/home/ubuntu22/infinigen/repo_snapshot`
-- Git state: not a Git repo
+- Git branch: `main`
+- Git commit at audit start:
+  `3a926c3fccb58e88929a714bd4cdb9321bee8f59`
+- Git remote:
+  `git@github.com:YangWang0709/room_cpp.git`
 - Python executable:
   `/home/ubuntu22/miniconda3/envs/infinigen/bin/python`
 - Python version: `Python 3.11.15`
@@ -63,6 +67,8 @@ Packaging state:
 
 The global audit command was saved in `audit_logs/01_stable_pose_refs.log`.
 It searched `infinigen`, `scripts`, `tests`, and `docs`.
+The focused production-code direct-call search is saved in
+`audit_logs/01b_direct_runtime_call_sites.log`.
 
 Production runtime call sites:
 
@@ -85,6 +91,10 @@ Related behavior in the same file:
 Conclusion:
 
 - The direct production calls are concentrated in `NatureShelfTrinketsFactory`.
+- Current global source code does not contain other production direct calls in
+  `infinigen`, `scripts`, or `tests`. Additional matches are documentation,
+  benchmark/analyzer fields, shell scripts that set the existing fast-path env
+  var, and this audit report.
 - The best migration point is a global wrapper called from both lines 393 and
   486. This keeps behavior identical while allowing backend selection,
   profiling, validation, and fallback in one place.
@@ -101,7 +111,7 @@ Conclusion:
 Audited installed source:
 
 - `/home/ubuntu22/miniconda3/envs/infinigen/lib/python3.11/site-packages/trimesh/poses.py`
-- Source saved to `audit_logs/05_trimesh_poses_source_head.log`
+- Source saved to `audit_logs/05_trimesh_poses_source.log`
 
 Relevant functions:
 
@@ -576,8 +586,8 @@ Suggested acceptance criteria:
 
 ## 14. Implementation Plan by Commits
 
-No commits were made in this audit. A future implementation should be split into
-small reviewable commits:
+This audit should be committed as report/log-only work. A future implementation
+should be split into small reviewable commits:
 
 1. Add `infinigen/core/util/stable_pose.py` wrapper, defaulting to trimesh, with
    env parsing and structured context diagnostics.
@@ -608,8 +618,8 @@ small reviewable commits:
   scripts?
 - Should C++ expose detailed per-face diagnostics, or only final transforms and
   probabilities? Diagnostics are useful early but should stay optional.
-- The current source directory is not a Git repo, so commit hash and branch
-  cannot be recorded for this audit.
+- The current source directory is a Git repo, but this report is still only an
+  audit. No C++ backend or production call-site migration is included here.
 
 ## 16. Final Recommendation
 

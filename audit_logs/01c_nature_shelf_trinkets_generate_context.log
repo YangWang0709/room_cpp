@@ -1,0 +1,341 @@
+   180	
+   181	def _placeholder_name(placeholder) -> str:
+   182	    return "" if placeholder is None else getattr(placeholder, "name", "")
+   183	
+   184	
+   185	def _object_tree_count(asset):
+   186	    try:
+   187	        return len(list(butil.iter_object_tree(asset)))
+   188	    except Exception:
+   189	        return ""
+   190	
+   191	
+   192	def _is_creature_base_factory(base_factory) -> bool:
+   193	    return isinstance(
+   194	        base_factory,
+   195	        (creatures.HerbivoreFactory, creatures.CarnivoreFactory),
+   196	    )
+   197	
+   198	
+   199	def _fast_stable_pose_allowed(base_factory) -> bool:
+   200	    return isinstance(
+   201	        base_factory,
+   202	        (
+   203	            mollusk.ClamFactory,
+   204	            mollusk.MusselFactory,
+   205	            mollusk.ScallopFactory,
+   206	            mollusk.ConchFactory,
+   207	            mollusk.AugerFactory,
+   208	            mollusk.VoluteFactory,
+   209	            mollusk.MolluskFactory,
+   210	        ),
+   211	    )
+   212	
+   213	
+   214	def _mesh_digest(mesh: trimesh.Trimesh) -> str:
+   215	    digest = hashlib.blake2b(digest_size=12)
+   216	    vertices = np.ascontiguousarray(np.asarray(mesh.vertices))
+   217	    faces = np.ascontiguousarray(np.asarray(mesh.faces))
+   218	    digest.update(str(vertices.dtype).encode("utf-8"))
+   219	    digest.update(str(vertices.shape).encode("utf-8"))
+   220	    digest.update(vertices.tobytes())
+   221	    digest.update(str(faces.dtype).encode("utf-8"))
+   222	    digest.update(str(faces.shape).encode("utf-8"))
+   223	    digest.update(faces.tobytes())
+   224	    return digest.hexdigest()
+   225	
+   226	
+   227	def _record_trimesh_complexity(
+   228	    row: dict, base_factory_class: str, mesh: trimesh.Trimesh
+   229	):
+   230	    vertex_count = len(mesh.vertices)
+   231	    face_count = len(mesh.faces)
+   232	    edge_count = len(mesh.edges_unique)
+   233	    row["mesh_vertex_count"] = vertex_count
+   234	    row["mesh_face_count"] = face_count
+   235	    row["mesh_edge_count"] = edge_count
+   236	
+   237	    bounds = np.asarray(mesh.bounds, dtype=float)
+   238	    if bounds.shape == (2, 3):
+   239	        mins = bounds[0]
+   240	        maxs = bounds[1]
+   241	        extents = maxs - mins
+   242	        for axis, value in zip(("x", "y", "z"), mins):
+   243	            row[f"bbox_min_{axis}"] = float(value)
+   244	        for axis, value in zip(("x", "y", "z"), maxs):
+   245	            row[f"bbox_max_{axis}"] = float(value)
+   246	        for axis, value in zip(("x", "y", "z"), extents):
+   247	            row[f"bbox_extent_{axis}"] = float(value)
+   248	
+   249	    extent_key = ",".join(
+   250	        f"{float(row.get(f'bbox_extent_{axis}', 0.0)):.6g}"
+   251	        for axis in ("x", "y", "z")
+   252	    )
+   253	    row["stable_pose_cache_candidate_key"] = (
+   254	        f"{base_factory_class}|v={vertex_count}|f={face_count}|e={edge_count}|"
+   255	        f"extent={extent_key}|mesh={_mesh_digest(mesh)}"
+   256	    )
+   257	
+   258	
+   259	def _empty_timing_row(
+   260	    factory: "NatureShelfTrinketsFactory",
+   261	    inst_seed,
+   262	    placeholder,
+   263	    before_sets: dict[str, set[str]],
+   264	) -> dict:
+   265	    row = {
+   266	        "factory_class": factory.__class__.__name__,
+   267	        "base_factory_class": factory.base_factory.__class__.__name__,
+   268	        "factory_seed": getattr(factory, "factory_seed", ""),
+   269	        "inst_seed": inst_seed,
+   270	        "base_inst_seed": "",
+   271	        "placeholder_name": _placeholder_name(placeholder),
+   272	        "create_asset_total_duration": 0.0,
+   273	        "base_factory_spawn_duration": 0.0,
+   274	        "join_children_duration": 0.0,
+   275	        "apply_initial_transform_duration": 0.0,
+   276	        "apply_modifiers_duration": 0.0,
+   277	        "obj2trimesh_duration": 0.0,
+   278	        "stable_pose_duration": 0.0,
+   279	        "fast_stable_pose_duration": 0.0,
+   280	        "apply_rotation_transform_duration": 0.0,
+   281	        "scale_and_position_duration": 0.0,
+   282	        "apply_final_location_transform_duration": 0.0,
+   283	        "fast_stable_pose_enabled": _fast_nature_trinket_stable_pose_enabled(),
+   284	        "fast_stable_pose_used": False,
+   285	        "stable_pose_mode": "original",
+   286	        "skipped_compute_stable_poses": False,
+   287	        "mesh_vertex_count": "",
+   288	        "mesh_face_count": "",
+   289	        "mesh_edge_count": "",
+   290	        "bbox_min_x": "",
+   291	        "bbox_min_y": "",
+   292	        "bbox_min_z": "",
+   293	        "bbox_max_x": "",
+   294	        "bbox_max_y": "",
+   295	        "bbox_max_z": "",
+   296	        "bbox_extent_x": "",
+   297	        "bbox_extent_y": "",
+   298	        "bbox_extent_z": "",
+   299	        "stable_pose_count": "",
+   300	        "stable_pose_best_prob": "",
+   301	        "stable_pose_cache_candidate_key": "",
+   302	        "asset_children_before_join": "",
+   303	        "asset_tree_object_count_after_spawn": "",
+   304	        "final_asset_name": "",
+   305	        "final_asset_type": "",
+   306	        "final_asset_mesh_name": "",
+   307	        "final_asset_child_count": "",
+   308	        "success": False,
+   309	        "error_type": "",
+   310	    }
+   311	    for key, names in before_sets.items():
+   312	        row[f"{key}_count_before"] = len(names)
+   313	    return row
+   314	
+   315	
+   316	def _finish_timing_row(row: dict, before_sets: dict[str, set[str]]):
+   317	    after_sets = _bpy_datablock_name_sets()
+   318	    for key, before_names in before_sets.items():
+   319	        after_names = after_sets[key]
+   320	        row[f"{key}_count_after"] = len(after_names)
+   321	        row[f"created_{key}_count"] = len(after_names - before_names)
+   322	
+   323	    for key in ("material", "texture", "node_group"):
+   324	        created_names = sorted(after_sets[key] - before_sets[key])
+   325	        row[f"created_{key}_names"] = ";".join(created_names)
+   326	
+   327	    _write_nature_shelf_trinkets_timing_row(row)
+   328	
+   329	
+   330	class NatureShelfTrinketsFactory(AssetFactory):
+   331	    factories = [
+   332	        corals.CoralFactory,
+   333	        rocks.BlenderRockFactory,
+   334	        rocks.BoulderFactory,
+   335	        monocot.PineconeFactory,
+   336	        mollusk.MolluskFactory,
+   337	        mollusk.AugerFactory,
+   338	        mollusk.ClamFactory,
+   339	        mollusk.ConchFactory,
+   340	        mollusk.MusselFactory,
+   341	        mollusk.ScallopFactory,
+   342	        mollusk.VoluteFactory,
+   343	        creatures.CarnivoreFactory,
+   344	        creatures.HerbivoreFactory,
+   345	    ]
+   346	    probs = np.array([1, 1, 1, 1, 3, 2, 3, 2, 2, 2, 2, 5, 5])
+   347	
+   348	    def __init__(self, factory_seed, coarse=False):
+   349	        super(NatureShelfTrinketsFactory, self).__init__(factory_seed, coarse)
+   350	        with FixedSeed(self.factory_seed):
+   351	            base_factory_fn = np.random.choice(
+   352	                self.factories, p=self.probs / self.probs.sum()
+   353	            )
+   354	
+   355	            kwargs = {}
+   356	            if base_factory_fn in [
+   357	                creatures.HerbivoreFactory,
+   358	                creatures.CarnivoreFactory,
+   359	            ]:
+   360	                kwargs.update({"hair": False})
+   361	
+   362	            self.base_factory = base_factory_fn(self.factory_seed, **kwargs)
+   363	
+   364	    def create_placeholder(self, **params) -> bpy.types.Object:
+   365	        size = np.random.uniform(0.1, 0.15)
+   366	        bpy.ops.mesh.primitive_cube_add(size=size, location=(0, 0, size / 2))
+   367	        placeholder = bpy.context.active_object
+   368	        return placeholder
+   369	
+   370	    def create_asset(self, i, placeholder=None, **params):
+   371	        if _profile_nature_shelf_trinkets_enabled():
+   372	            return self._create_asset_timed(i, placeholder=placeholder, **params)
+   373	
+   374	        asset = self.base_factory.spawn_asset(
+   375	            np.random.randint(1e7), distance=200, adaptive_resolution=False
+   376	        )
+   377	
+   378	        if list(asset.children):
+   379	            asset = join_objects(list(asset.children))
+   380	
+   381	        # butil.modify_mesh(asset, 'DECIMATE')
+   382	        butil.apply_transform(asset, loc=True)
+   383	        butil.apply_modifiers(asset)
+   384	        if _is_creature_base_factory(self.base_factory):
+   385	            pass
+   386	        elif _fast_nature_trinket_stable_pose_enabled() and _fast_stable_pose_allowed(
+   387	            self.base_factory
+   388	        ):
+   389	            pass
+   390	        else:
+   391	            if not isinstance(asset, trimesh.Trimesh):
+   392	                mesh = obj.obj2trimesh(asset)
+   393	            stable_poses, probs = trimesh.poses.compute_stable_poses(mesh)
+   394	            stable_pose = stable_poses[np.argmax(probs)]
+   395	            asset.rotation_euler = mathutils.Matrix(stable_pose[:3, :3]).to_euler()
+   396	        butil.apply_transform(asset, rot=True)
+   397	        dim = asset.dimensions
+   398	        bounding_box = placeholder.dimensions
+   399	        scale = min([bounding_box[i] / dim[i] for i in range(3)])
+   400	        asset.scale = [scale for i in range(3)]
+   401	        # asset.dimensions = placeholder.dimensions
+   402	        butil.apply_transform(asset, loc=True)
+   403	        bounds = butil.bounds(asset)
+   404	        cur_loc = asset.location
+   405	        new_location = [
+   406	            cur_loc[i] - (bounds[0][i] + bounds[1][i]) / 2 for i in range(3)
+   407	        ]
+   408	        new_location[2] = cur_loc[2] - (bounds[0][2] + bounding_box[2] / 2)
+   409	        asset.location = new_location
+   410	        butil.apply_transform(asset, loc=True)
+   411	        return asset
+   412	
+   413	    def _create_asset_timed(self, i, placeholder=None, **params):
+   414	        before_sets = _bpy_datablock_name_sets()
+   415	        row = _empty_timing_row(self, i, placeholder, before_sets)
+   416	        total_start_time = time.perf_counter()
+   417	        asset = None
+   418	
+   419	        try:
+   420	            base_inst_seed = np.random.randint(1e7)
+   421	            row["base_inst_seed"] = base_inst_seed
+   422	
+   423	            step_start_time = time.perf_counter()
+   424	            try:
+   425	                asset = self.base_factory.spawn_asset(
+   426	                    base_inst_seed, distance=200, adaptive_resolution=False
+   427	                )
+   428	            finally:
+   429	                _record_duration(row, "base_factory_spawn_duration", step_start_time)
+   430	
+   431	            row["asset_tree_object_count_after_spawn"] = _object_tree_count(asset)
+   432	            row["asset_children_before_join"] = len(list(asset.children))
+   433	
+   434	            if list(asset.children):
+   435	                step_start_time = time.perf_counter()
+   436	                try:
+   437	                    asset = join_objects(list(asset.children))
+   438	                finally:
+   439	                    _record_duration(row, "join_children_duration", step_start_time)
+   440	
+   441	            step_start_time = time.perf_counter()
+   442	            try:
+   443	                butil.apply_transform(asset, loc=True)
+   444	            finally:
+   445	                _record_duration(
+   446	                    row, "apply_initial_transform_duration", step_start_time
+   447	                )
+   448	
+   449	            step_start_time = time.perf_counter()
+   450	            try:
+   451	                butil.apply_modifiers(asset)
+   452	            finally:
+   453	                _record_duration(row, "apply_modifiers_duration", step_start_time)
+   454	
+   455	            if _is_creature_base_factory(self.base_factory):
+   456	                pass
+   457	            elif (
+   458	                _fast_nature_trinket_stable_pose_enabled()
+   459	                and _fast_stable_pose_allowed(self.base_factory)
+   460	            ):
+   461	                step_start_time = time.perf_counter()
+   462	                try:
+   463	                    row["fast_stable_pose_used"] = True
+   464	                    row["stable_pose_mode"] = "fast_bbox_bottom_align"
+   465	                    row["skipped_compute_stable_poses"] = True
+   466	                finally:
+   467	                    _record_duration(
+   468	                        row, "fast_stable_pose_duration", step_start_time
+   469	                    )
+   470	            else:
+   471	                if isinstance(asset, trimesh.Trimesh):
+   472	                    mesh = asset
+   473	                else:
+   474	                    step_start_time = time.perf_counter()
+   475	                    try:
+   476	                        mesh = obj.obj2trimesh(asset)
+   477	                    finally:
+   478	                        _record_duration(row, "obj2trimesh_duration", step_start_time)
+   479	
+   480	                _record_trimesh_complexity(
+   481	                    row, self.base_factory.__class__.__name__, mesh
+   482	                )
+   483	
+   484	                step_start_time = time.perf_counter()
+   485	                try:
+   486	                    stable_poses, probs = trimesh.poses.compute_stable_poses(mesh)
+   487	                    row["stable_pose_count"] = len(stable_poses)
+   488	                    best_idx = np.argmax(probs)
+   489	                    row["stable_pose_best_prob"] = float(probs[best_idx])
+   490	                    stable_pose = stable_poses[best_idx]
+   491	                    asset.rotation_euler = mathutils.Matrix(
+   492	                        stable_pose[:3, :3]
+   493	                    ).to_euler()
+   494	                finally:
+   495	                    _record_duration(row, "stable_pose_duration", step_start_time)
+   496	
+   497	            step_start_time = time.perf_counter()
+   498	            try:
+   499	                butil.apply_transform(asset, rot=True)
+   500	            finally:
+   501	                _record_duration(
+   502	                    row, "apply_rotation_transform_duration", step_start_time
+   503	                )
+   504	
+   505	            step_start_time = time.perf_counter()
+   506	            try:
+   507	                dim = asset.dimensions
+   508	                bounding_box = placeholder.dimensions
+   509	                scale = min([bounding_box[i] / dim[i] for i in range(3)])
+   510	                asset.scale = [scale for i in range(3)]
+   511	                bounds = butil.bounds(asset)
+   512	                cur_loc = asset.location
+   513	                new_location = [
+   514	                    cur_loc[i] - (bounds[0][i] + bounds[1][i]) / 2
+   515	                    for i in range(3)
+   516	                ]
+   517	                new_location[2] = cur_loc[2] - (bounds[0][2] + bounding_box[2] / 2)
+   518	                asset.location = new_location
+   519	            finally:
+   520	                _record_duration(row, "scale_and_position_duration", step_start_time)

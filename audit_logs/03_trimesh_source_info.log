@@ -1,0 +1,5 @@
+trimesh version: 3.22.5
+trimesh file: /home/ubuntu22/miniconda3/envs/infinigen/lib/python3.11/site-packages/trimesh/__init__.py
+poses file: /home/ubuntu22/miniconda3/envs/infinigen/lib/python3.11/site-packages/trimesh/poses.py
+compute_stable_poses source: /home/ubuntu22/miniconda3/envs/infinigen/lib/python3.11/site-packages/trimesh/poses.py
+compute_stable_poses start line: 20

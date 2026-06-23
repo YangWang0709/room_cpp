@@ -1,0 +1,219 @@
+     1	"""Pure NumPy fallback and optional Cython/C++ geometry kernels.
+     2	
+     3	These helpers are standalone prototypes for numeric AABB and bbox reductions.
+     4	They do not import Blender, gin, solver code, or random number generators.
+     5	
+     6	Boundary policy:
+     7	    AABB boundary contact counts as overlap and containment. This is the
+     8	    conservative broad-phase choice for future exact collision checks because a
+     9	    touching pair must not be skipped before the existing contact logic sees it.
+    10	"""
+    11	
+    12	from __future__ import annotations
+    13	
+    14	from collections.abc import Callable
+    15	from typing import Any
+    16	
+    17	import numpy as np
+    18	
+    19	_SUPPORTED_DTYPES = (np.dtype(np.float32), np.dtype(np.float64))
+    20	
+    21	try:
+    22	    from . import geometry_kernels_cpp as _cpp
+    23	except Exception as exc:  # pragma: no cover - exercised when extension is absent.
+    24	    _cpp = None
+    25	    C_EXTENSION_ERROR = repr(exc)
+    26	else:
+    27	    C_EXTENSION_ERROR = None
+    28	
+    29	C_EXTENSION_AVAILABLE = _cpp is not None
+    30	
+    31	
+    32	def _require_float_dtype(name: str, arr: np.ndarray) -> None:
+    33	    if arr.dtype not in _SUPPORTED_DTYPES:
+    34	        raise TypeError(
+    35	            f"{name} must have dtype float32 or float64, got {arr.dtype}"
+    36	        )
+    37	
+    38	
+    39	def _promoted_float_dtype(*arrays: np.ndarray) -> np.dtype:
+    40	    dtype = np.dtype(np.result_type(*(arr.dtype for arr in arrays)))
+    41	    if dtype not in _SUPPORTED_DTYPES:
+    42	        dtypes = ", ".join(str(arr.dtype) for arr in arrays)
+    43	        raise TypeError(f"inputs must have dtype float32 or float64, got {dtypes}")
+    44	    return dtype
+    45	
+    46	
+    47	def _as_points(name: str, value: Any) -> np.ndarray:
+    48	    arr = np.asarray(value)
+    49	    if arr.ndim != 2 or arr.shape[1] != 3:
+    50	        raise ValueError(f"{name} must have shape [N, 3], got {arr.shape}")
+    51	    if arr.shape[0] == 0:
+    52	        raise ValueError(f"{name} must contain at least one row")
+    53	    _require_float_dtype(name, arr)
+    54	    return arr
+    55	
+    56	
+    57	def _as_boxes(name: str, value: Any) -> np.ndarray:
+    58	    return _as_points(name, value)
+    59	
+    60	
+    61	def _as_corner(name: str, value: Any) -> np.ndarray:
+    62	    arr = np.asarray(value)
+    63	    if arr.shape != (3,):
+    64	        raise ValueError(f"{name} must have shape [3], got {arr.shape}")
+    65	    _require_float_dtype(name, arr)
+    66	    return arr
+    67	
+    68	
+    69	def _call_cpp(name: str, fallback: Callable, *args: Any) -> Any:
+    70	    if _cpp is None:
+    71	        return fallback(*args)
+    72	    return getattr(_cpp, name)(*args)
+    73	
+    74	
+    75	def _require_cpp() -> Any:
+    76	    if _cpp is None:
+    77	        raise RuntimeError(
+    78	            "geometry_kernels_cpp extension is not available; "
+    79	            f"fallback remains usable. import error: {C_EXTENSION_ERROR}"
+    80	        )
+    81	    return _cpp
+    82	
+    83	
+    84	def bbox_min_max_py(points: Any) -> tuple[np.ndarray, np.ndarray]:
+    85	    """Return coordinate-wise min and max for points shaped [N, 3]."""
+    86	    points_arr = _as_points("points", points)
+    87	    return np.min(points_arr, axis=0), np.max(points_arr, axis=0)
+    88	
+    89	
+    90	def bbox_min_max_cpp(points: Any) -> tuple[np.ndarray, np.ndarray]:
+    91	    """Call the compiled bbox_min_max kernel or raise if it is unavailable."""
+    92	    return _require_cpp().bbox_min_max(points)
+    93	
+    94	
+    95	def bbox_min_max(points: Any) -> tuple[np.ndarray, np.ndarray]:
+    96	    """Return coordinate-wise min and max, using Cython/C++ when available."""
+    97	    return _call_cpp("bbox_min_max", bbox_min_max_py, points)
+    98	
+    99	
+   100	def bbox_union_py(mins: Any, maxs: Any) -> tuple[np.ndarray, np.ndarray]:
+   101	    """Return the union min/max for bbox corner arrays shaped [N, 3]."""
+   102	    mins_arr = _as_boxes("mins", mins)
+   103	    maxs_arr = _as_boxes("maxs", maxs)
+   104	    if mins_arr.shape != maxs_arr.shape:
+   105	        raise ValueError(
+   106	            f"mins and maxs must have the same shape, got {mins_arr.shape} "
+   107	            f"and {maxs_arr.shape}"
+   108	        )
+   109	    dtype = _promoted_float_dtype(mins_arr, maxs_arr)
+   110	    mins_arr = np.asarray(mins_arr, dtype=dtype)
+   111	    maxs_arr = np.asarray(maxs_arr, dtype=dtype)
+   112	    return np.min(mins_arr, axis=0), np.max(maxs_arr, axis=0)
+   113	
+   114	
+   115	def bbox_union_cpp(mins: Any, maxs: Any) -> tuple[np.ndarray, np.ndarray]:
+   116	    """Call the compiled bbox_union kernel or raise if it is unavailable."""
+   117	    return _require_cpp().bbox_union(mins, maxs)
+   118	
+   119	
+   120	def bbox_union(mins: Any, maxs: Any) -> tuple[np.ndarray, np.ndarray]:
+   121	    """Return the union min/max, using Cython/C++ when available."""
+   122	    return _call_cpp("bbox_union", bbox_union_py, mins, maxs)
+   123	
+   124	
+   125	def aabb_overlap_matrix_py(
+   126	    mins_a: Any, maxs_a: Any, mins_b: Any, maxs_b: Any
+   127	) -> np.ndarray:
+   128	    """Return inclusive AABB overlap matrix shaped [A, B]."""
+   129	    mins_a_arr = _as_boxes("mins_a", mins_a)
+   130	    maxs_a_arr = _as_boxes("maxs_a", maxs_a)
+   131	    mins_b_arr = _as_boxes("mins_b", mins_b)
+   132	    maxs_b_arr = _as_boxes("maxs_b", maxs_b)
+   133	    if mins_a_arr.shape != maxs_a_arr.shape:
+   134	        raise ValueError(
+   135	            f"mins_a and maxs_a must have the same shape, got "
+   136	            f"{mins_a_arr.shape} and {maxs_a_arr.shape}"
+   137	        )
+   138	    if mins_b_arr.shape != maxs_b_arr.shape:
+   139	        raise ValueError(
+   140	            f"mins_b and maxs_b must have the same shape, got "
+   141	            f"{mins_b_arr.shape} and {maxs_b_arr.shape}"
+   142	        )
+   143	    dtype = _promoted_float_dtype(mins_a_arr, maxs_a_arr, mins_b_arr, maxs_b_arr)
+   144	    mins_a_arr = np.asarray(mins_a_arr, dtype=dtype)
+   145	    maxs_a_arr = np.asarray(maxs_a_arr, dtype=dtype)
+   146	    mins_b_arr = np.asarray(mins_b_arr, dtype=dtype)
+   147	    maxs_b_arr = np.asarray(maxs_b_arr, dtype=dtype)
+   148	    return np.all(
+   149	        (maxs_a_arr[:, np.newaxis, :] >= mins_b_arr[np.newaxis, :, :])
+   150	        & (maxs_b_arr[np.newaxis, :, :] >= mins_a_arr[:, np.newaxis, :]),
+   151	        axis=2,
+   152	    )
+   153	
+   154	
+   155	def aabb_overlap_matrix_cpp(
+   156	    mins_a: Any, maxs_a: Any, mins_b: Any, maxs_b: Any
+   157	) -> np.ndarray:
+   158	    """Call the compiled AABB overlap kernel or raise if it is unavailable."""
+   159	    return _require_cpp().aabb_overlap_matrix(mins_a, maxs_a, mins_b, maxs_b)
+   160	
+   161	
+   162	def aabb_overlap_matrix(
+   163	    mins_a: Any, maxs_a: Any, mins_b: Any, maxs_b: Any
+   164	) -> np.ndarray:
+   165	    """Return inclusive AABB overlap matrix, using Cython/C++ when available."""
+   166	    return _call_cpp(
+   167	        "aabb_overlap_matrix",
+   168	        aabb_overlap_matrix_py,
+   169	        mins_a,
+   170	        maxs_a,
+   171	        mins_b,
+   172	        maxs_b,
+   173	    )
+   174	
+   175	
+   176	def aabb_contains_py(
+   177	    outer_min: Any, outer_max: Any, inner_min: Any, inner_max: Any
+   178	) -> bool:
+   179	    """Return True when inner is fully contained in outer, inclusively."""
+   180	    outer_min_arr = _as_corner("outer_min", outer_min)
+   181	    outer_max_arr = _as_corner("outer_max", outer_max)
+   182	    inner_min_arr = _as_corner("inner_min", inner_min)
+   183	    inner_max_arr = _as_corner("inner_max", inner_max)
+   184	    dtype = _promoted_float_dtype(
+   185	        outer_min_arr, outer_max_arr, inner_min_arr, inner_max_arr
+   186	    )
+   187	    outer_min_arr = np.asarray(outer_min_arr, dtype=dtype)
+   188	    outer_max_arr = np.asarray(outer_max_arr, dtype=dtype)
+   189	    inner_min_arr = np.asarray(inner_min_arr, dtype=dtype)
+   190	    inner_max_arr = np.asarray(inner_max_arr, dtype=dtype)
+   191	    return bool(
+   192	        np.all(outer_min_arr <= inner_min_arr)
+   193	        and np.all(inner_max_arr <= outer_max_arr)
+   194	    )
+   195	
+   196	
+   197	def aabb_contains_cpp(
+   198	    outer_min: Any, outer_max: Any, inner_min: Any, inner_max: Any
+   199	) -> bool:
+   200	    """Call the compiled AABB containment kernel or raise if unavailable."""
+   201	    return bool(
+   202	        _require_cpp().aabb_contains(outer_min, outer_max, inner_min, inner_max)
+   203	    )
+   204	
+   205	
+   206	def aabb_contains(
+   207	    outer_min: Any, outer_max: Any, inner_min: Any, inner_max: Any
+   208	) -> bool:
+   209	    """Return inclusive AABB containment, using Cython/C++ when available."""
+   210	    return bool(
+   211	        _call_cpp(
+   212	            "aabb_contains",
+   213	            aabb_contains_py,
+   214	            outer_min,
+   215	            outer_max,
+   216	            inner_min,
+   217	            inner_max,
+   218	        )
+   219	    )
