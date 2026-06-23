@@ -23,6 +23,7 @@ from infinigen.assets.utils.object import join_objects
 from infinigen.core.placement.factory import AssetFactory
 from infinigen.core.util import blender as butil
 from infinigen.core.util.math import FixedSeed
+from infinigen.core.util.stable_pose import compute_stable_poses
 
 logger = logging.getLogger(__name__)
 
@@ -390,7 +391,9 @@ class NatureShelfTrinketsFactory(AssetFactory):
         else:
             if not isinstance(asset, trimesh.Trimesh):
                 mesh = obj.obj2trimesh(asset)
-            stable_poses, probs = trimesh.poses.compute_stable_poses(mesh)
+            stable_poses, probs = compute_stable_poses(
+                mesh, context="NatureShelfTrinketsFactory.create_asset"
+            )
             stable_pose = stable_poses[np.argmax(probs)]
             asset.rotation_euler = mathutils.Matrix(stable_pose[:3, :3]).to_euler()
         butil.apply_transform(asset, rot=True)
@@ -483,7 +486,9 @@ class NatureShelfTrinketsFactory(AssetFactory):
 
                 step_start_time = time.perf_counter()
                 try:
-                    stable_poses, probs = trimesh.poses.compute_stable_poses(mesh)
+                    stable_poses, probs = compute_stable_poses(
+                        mesh, context="NatureShelfTrinketsFactory._create_asset_timed"
+                    )
                     row["stable_pose_count"] = len(stable_poses)
                     best_idx = np.argmax(probs)
                     row["stable_pose_best_prob"] = float(probs[best_idx])
