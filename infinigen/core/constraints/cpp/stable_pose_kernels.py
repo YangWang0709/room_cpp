@@ -43,9 +43,42 @@ def _require_cpp() -> Any:
     return _cpp
 
 
+def compute_stable_poses_cpp_from_inputs(
+    *,
+    vertices: Any,
+    triangles: Any,
+    face_normals: Any,
+    triangles_center: Any,
+    face_adjacency: Any,
+    face_adjacency_edges: Any,
+    sample_coms: Any,
+    threshold: float,
+    context: Any = None,
+) -> Any:
+    """Placeholder for the future arrays-based C++ stable pose backend."""
+    _ = context
+    cpp = _require_cpp()
+    kernel = getattr(cpp, "compute_stable_poses_from_arrays", None)
+    if kernel is None:
+        raise RuntimeError(
+            "stable_pose_kernels_cpp extension does not expose "
+            "compute_stable_poses_from_arrays; rebuild the extension"
+        )
+    return kernel(
+        vertices,
+        triangles,
+        face_normals,
+        triangles_center,
+        face_adjacency,
+        face_adjacency_edges,
+        sample_coms,
+        threshold,
+    )
+
+
 def compute_stable_poses_cpp(*args: Any, **kwargs: Any) -> Any:
-    """Placeholder for the future C++ stable pose backend."""
+    """Deprecated mesh-based skeleton entry point."""
     _require_cpp()
     raise NotImplementedError(
-        "C++ stable pose backend skeleton is compiled but not implemented yet"
+        "C++ stable pose backend core is not implemented yet"
     )

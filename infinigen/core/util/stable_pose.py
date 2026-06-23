@@ -6,6 +6,7 @@ that currently fall back to trimesh without changing stable pose output.
 
 from __future__ import annotations
 
+from dataclasses import dataclass, replace
 import logging
 import os
 
@@ -19,6 +20,20 @@ DISABLE_CPP_STABLE_POSE_ENV_VAR = "INFINIGEN_DISABLE_CPP_STABLE_POSE"
 PROFILE_STABLE_POSE_ENV_VAR = "INFINIGEN_PROFILE_STABLE_POSE"
 VALIDATE_CPP_STABLE_POSE_ENV_VAR = "INFINIGEN_VALIDATE_CPP_STABLE_POSE"
 _CPP_BACKENDS = {"cpp", "auto"}
+
+
+@dataclass(frozen=True)
+class StablePoseInputs:
+    cvh: object
+    center_mass: np.ndarray
+    sample_coms: np.ndarray
+    vertices: np.ndarray
+    triangles: np.ndarray
+    face_normals: np.ndarray
+    triangles_center: np.ndarray
+    face_adjacency: np.ndarray
+    face_adjacency_edges: np.ndarray
+    threshold: float
 
 
 class StablePoseBackendError(RuntimeError):
@@ -54,23 +69,57 @@ def _compute_stable_poses_trimesh(
     )
 
 
-def _compute_stable_poses_cpp(
-    mesh,
-    center_mass=None,
-    sigma=0.0,
-    n_samples=1,
-    threshold=0.0,
-    *,
-    context=None,
-):
+def _prepare_stable_pose_inputs(mesh, center_mass=None, sigma=0.0, n_samples=1):
+    cvh = mesh.convex_hull
+    if center_mass is None:
+        center_mass = mesh.center_mass
+    center_mass = np.asarray(center_mass, dtype=np.float64)
+
+    sample_coms = []
+    while len(sample_coms) < n_samples:
+        remaining = n_samples - len(sample_coms)
+        coms = np.random.multivariate_normal(
+            center_mass,
+            sigma * np.eye(3),
+            remaining,
+        )
+        for c in coms:
+            dots = np.einsum("ij,ij->i", c - cvh.triangles_center, cvh.face_normals)
+            if np.all(dots < 0):
+                sample_coms.append(c)
+
+    sample_coms = np.ascontiguousarray(sample_coms, dtype=np.float64).reshape(
+        len(sample_coms), 3
+    )
+
+    return StablePoseInputs(
+        cvh=cvh,
+        center_mass=center_mass,
+        sample_coms=sample_coms,
+        vertices=np.ascontiguousarray(cvh.vertices, dtype=np.float64),
+        triangles=np.ascontiguousarray(cvh.triangles, dtype=np.float64),
+        face_normals=np.ascontiguousarray(cvh.face_normals, dtype=np.float64),
+        triangles_center=np.ascontiguousarray(cvh.triangles_center, dtype=np.float64),
+        face_adjacency=np.ascontiguousarray(cvh.face_adjacency, dtype=np.int64),
+        face_adjacency_edges=np.ascontiguousarray(
+            cvh.face_adjacency_edges, dtype=np.int64
+        ),
+        threshold=0.0,
+    )
+
+
+def _compute_stable_poses_cpp_from_inputs(inputs, *, context=None):
     from infinigen.core.constraints.cpp import stable_pose_kernels
 
-    return stable_pose_kernels.compute_stable_poses_cpp(
-        mesh,
-        center_mass=center_mass,
-        sigma=sigma,
-        n_samples=n_samples,
-        threshold=threshold,
+    return stable_pose_kernels.compute_stable_poses_cpp_from_inputs(
+        vertices=inputs.vertices,
+        triangles=inputs.triangles,
+        face_normals=inputs.face_normals,
+        triangles_center=inputs.triangles_center,
+        face_adjacency=inputs.face_adjacency,
+        face_adjacency_edges=inputs.face_adjacency_edges,
+        sample_coms=inputs.sample_coms,
+        threshold=inputs.threshold,
         context=context,
     )
 
@@ -248,12 +297,15 @@ def compute_stable_poses(
     trimesh_result = None
 
     try:
-        cpp_result = _compute_stable_poses_cpp(
+        inputs = _prepare_stable_pose_inputs(
             mesh,
             center_mass=center_mass,
             sigma=sigma,
             n_samples=n_samples,
-            threshold=threshold,
+        )
+        inputs = replace(inputs, threshold=float(threshold))
+        cpp_result = _compute_stable_poses_cpp_from_inputs(
+            inputs,
             context=context,
         )
         _validate_stable_pose_result(*cpp_result)
