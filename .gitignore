@@ -121,6 +121,7 @@ __pycache__/
 *.dll
 *.dylib
 infinigen/core/constraints/cpp/geometry_kernels.cpp
+infinigen/core/constraints/cpp/stable_pose_kernels.cpp
 
 # Blender / USD / render outputs
 *.blend

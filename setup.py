@@ -26,6 +26,9 @@ BUILD_BNURBS = os.environ.get("INFINIGEN_INSTALL_BNURBS", "False") == str_true
 DISABLE_GEOMETRY_CPP = (
     os.environ.get("INFINIGEN_DISABLE_GEOMETRY_CPP", "False") == str_true
 )
+DISABLE_STABLE_POSE_CPP = (
+    os.environ.get("INFINIGEN_DISABLE_STABLE_POSE_CPP", "False") == str_true
+)
 
 dont_build_steps = ["clean", "egg_info", "dist_info", "sdist", "--help"]
 is_build_step = not any(x in sys.argv[1] for x in dont_build_steps)
@@ -65,6 +68,16 @@ if not DISABLE_GEOMETRY_CPP:
         Extension(
             name="infinigen.core.constraints.cpp.geometry_kernels_cpp",
             sources=["infinigen/core/constraints/cpp/geometry_kernels.pyx"],
+            include_dirs=[numpy.get_include()],
+            language="c++",
+        )
+    )
+
+if not DISABLE_STABLE_POSE_CPP:
+    cython_extensions.append(
+        Extension(
+            name="infinigen.core.constraints.cpp.stable_pose_kernels_cpp",
+            sources=["infinigen/core/constraints/cpp/stable_pose_kernels.pyx"],
             include_dirs=[numpy.get_include()],
             language="c++",
         )
