@@ -1,4 +1,8 @@
 import numpy as np
+from libc.math cimport acos, atan, isfinite, sqrt, tan
+
+
+cdef double PI = 3.141592653589793238462643383279502884
 
 
 def backend_name():
@@ -28,32 +32,119 @@ def _orient3dfast(plane, pd):
     )
 
 
-def _compute_static_prob(tri, com):
-    sv = []
-    for v in tri:
-        vec = v - com
-        norm = np.linalg.norm(vec)
-        if norm == 0.0:
-            return 0.0
-        sv.append(vec / norm)
+cdef inline double _clamp_unit(double value):
+    if value < -1.0:
+        return -1.0
+    if value > 1.0:
+        return 1.0
+    return value
 
-    a = np.arccos(min(1.0, max(-1.0, np.dot(sv[0], sv[1]))))
-    b = np.arccos(min(1.0, max(-1.0, np.dot(sv[1], sv[2]))))
-    c = np.arccos(min(1.0, max(-1.0, np.dot(sv[2], sv[0]))))
+
+cdef inline double _compute_static_prob_from_vectors(
+    double v0x,
+    double v0y,
+    double v0z,
+    double v1x,
+    double v1y,
+    double v1z,
+    double v2x,
+    double v2y,
+    double v2z,
+):
+    cdef double n0 = sqrt(v0x * v0x + v0y * v0y + v0z * v0z)
+    cdef double n1 = sqrt(v1x * v1x + v1y * v1y + v1z * v1z)
+    cdef double n2 = sqrt(v2x * v2x + v2y * v2y + v2z * v2z)
+    cdef double a
+    cdef double b
+    cdef double c
+    cdef double s
+    cdef double s_value
+    cdef double area_term
+    cdef double prob
+
+    if n0 == 0.0 or n1 == 0.0 or n2 == 0.0:
+        return 0.0
+
+    v0x /= n0
+    v0y /= n0
+    v0z /= n0
+    v1x /= n1
+    v1y /= n1
+    v1z /= n1
+    v2x /= n2
+    v2y /= n2
+    v2z /= n2
+
+    a = acos(_clamp_unit(v0x * v1x + v0y * v1y + v0z * v1z))
+    b = acos(_clamp_unit(v1x * v2x + v1y * v2y + v1z * v2z))
+    c = acos(_clamp_unit(v2x * v0x + v2y * v0y + v2z * v0z))
     s = (a + b + c) / 2.0
 
-    for s_value in (s, s + 1e-8):
-        area_term = (
-            np.tan(s_value / 2.0)
-            * np.tan((s_value - a) / 2.0)
-            * np.tan((s_value - b) / 2.0)
-            * np.tan((s_value - c) / 2.0)
-        )
-        if np.isfinite(area_term) and area_term >= 0.0:
-            prob = 1.0 / np.pi * np.arctan(np.sqrt(area_term))
-            if np.isfinite(prob):
-                return float(prob)
+    s_value = s
+    area_term = (
+        tan(s_value / 2.0)
+        * tan((s_value - a) / 2.0)
+        * tan((s_value - b) / 2.0)
+        * tan((s_value - c) / 2.0)
+    )
+    if isfinite(area_term) and area_term >= 0.0:
+        prob = 1.0 / PI * atan(sqrt(area_term))
+        if isfinite(prob):
+            return prob
+
+    s_value = s + 1e-8
+    area_term = (
+        tan(s_value / 2.0)
+        * tan((s_value - a) / 2.0)
+        * tan((s_value - b) / 2.0)
+        * tan((s_value - c) / 2.0)
+    )
+    if isfinite(area_term) and area_term >= 0.0:
+        prob = 1.0 / PI * atan(sqrt(area_term))
+        if isfinite(prob):
+            return prob
+
     return 0.0
+
+
+def _compute_static_prob(tri, com):
+    tri_arr = np.asarray(tri, dtype=np.float64)
+    com_arr = np.asarray(com, dtype=np.float64)
+    if tri_arr.shape != (3, 3) or com_arr.shape != (3,):
+        raise ValueError("tri must have shape (3, 3) and com must have shape (3,)")
+
+    return float(
+        _compute_static_prob_from_vectors(
+            tri_arr[0, 0] - com_arr[0],
+            tri_arr[0, 1] - com_arr[1],
+            tri_arr[0, 2] - com_arr[2],
+            tri_arr[1, 0] - com_arr[0],
+            tri_arr[1, 1] - com_arr[1],
+            tri_arr[1, 2] - com_arr[2],
+            tri_arr[2, 0] - com_arr[0],
+            tri_arr[2, 1] - com_arr[1],
+            tri_arr[2, 2] - com_arr[2],
+        )
+    )
+
+
+cdef inline double _compute_static_prob_face(
+    double[:, :, ::1] triangles,
+    double[:, ::1] sample_coms,
+    Py_ssize_t face_i,
+    Py_ssize_t sample_i,
+):
+    return _compute_static_prob_from_vectors(
+        triangles[face_i, 0, 0] - sample_coms[sample_i, 0],
+        triangles[face_i, 0, 1] - sample_coms[sample_i, 1],
+        triangles[face_i, 0, 2] - sample_coms[sample_i, 2],
+        triangles[face_i, 1, 0] - sample_coms[sample_i, 0],
+        triangles[face_i, 1, 1] - sample_coms[sample_i, 1],
+        triangles[face_i, 1, 2] - sample_coms[sample_i, 2],
+        triangles[face_i, 2, 0] - sample_coms[sample_i, 0],
+        triangles[face_i, 2, 1] - sample_coms[sample_i, 1],
+        triangles[face_i, 2, 2] - sample_coms[sample_i, 2],
+    )
 
 
 def _points_to_barycentric(triangles, points):
@@ -84,6 +175,10 @@ def compute_stable_poses_from_arrays(
     double[:, ::1] sample_coms,
     double threshold,
 ):
+    cdef Py_ssize_t sample_i
+    cdef Py_ssize_t face_i
+    cdef double[::1] probs_view
+
     vertices_arr = np.asarray(vertices, dtype=np.float64)
     triangles_arr = np.asarray(triangles, dtype=np.float64)
     face_normals_arr = np.asarray(face_normals, dtype=np.float64)
@@ -113,11 +208,14 @@ def compute_stable_poses_from_arrays(
     norms_to_probs = {}
     inv_num_samples = 1.0 / float(num_samples)
 
-    for sample_com in sample_coms_arr:
-        probs = np.array(
-            [_compute_static_prob(tri, sample_com) for tri in triangles_arr],
-            dtype=np.float64,
-        )
+    for sample_i in range(num_samples):
+        sample_com = sample_coms_arr[sample_i]
+        probs = np.empty(num_faces, dtype=np.float64)
+        probs_view = probs
+        for face_i in range(num_faces):
+            probs_view[face_i] = _compute_static_prob_face(
+                triangles, sample_coms, face_i, sample_i
+            )
 
         proj_dists = np.einsum(
             "ij,ij->i",

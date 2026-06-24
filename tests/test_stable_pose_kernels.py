@@ -73,3 +73,51 @@ def test_compute_stable_poses_cpp_from_inputs_tetrahedron_matches_trimesh():
     mesh = trimesh.Trimesh(vertices=vertices, faces=faces, process=True)
 
     _assert_cpp_matches_trimesh(mesh)
+
+
+def test_compute_static_prob_matches_trimesh_reference_for_finite_cases():
+    cpp = stable_pose_kernels._require_cpp()
+
+    cases = [
+        (
+            np.array(
+                [
+                    [0.0, 0.0, 0.0],
+                    [1.0, 0.0, 0.0],
+                    [0.0, 1.0, 0.0],
+                ],
+                dtype=np.float64,
+            ),
+            np.array([0.25, 0.25, 1.0], dtype=np.float64),
+        ),
+        (
+            np.array(
+                [
+                    [0.0, 0.0, 0.0],
+                    [1.0, 0.0, 0.0],
+                    [0.0, 1.0, 0.0],
+                ],
+                dtype=np.float64,
+            ),
+            np.array([0.0, 0.0, 0.0], dtype=np.float64),
+        ),
+        (
+            np.array(
+                [
+                    [0.0, 0.0, 0.0],
+                    [1e-8, 0.0, 0.0],
+                    [0.0, 1e-8, 0.0],
+                ],
+                dtype=np.float64,
+            ),
+            np.array([0.2, 0.3, 0.4], dtype=np.float64),
+        ),
+    ]
+
+    for tri, com in cases:
+        expected = trimesh.poses._compute_static_prob(tri, com)
+        actual = cpp._compute_static_prob(tri, com)
+        if np.isfinite(expected):
+            assert np.isclose(actual, expected, rtol=1e-12, atol=1e-12)
+        else:
+            assert actual == 0.0
