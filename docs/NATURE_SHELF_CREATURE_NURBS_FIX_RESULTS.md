@@ -25,7 +25,10 @@ AttributeError: 'int' object has no attribute 'mean'
 - Added regression coverage in `tests/test_nature_shelf_trinkets_factory.py`
   that verifies the required carnivore/herbivore template prefixes are present
   and that `carnivore.tiger_genome()` and `herbivore.herbivore_genome()` can
-  sample their NURBS parameters.
+  sample their NURBS parameters. The same test file also exercises the
+  `CarnivoreFactory.create_asset()` and `HerbivoreFactory.create_asset()` paths
+  with Blender-heavy postprocessing stubbed out, so the factory-level genome
+  sampling path is covered without a full asset build.
 
 The temporary `INFINIGEN_DISABLE_NATURE_SHELF_CREATURE_TRINKETS` workaround was
 not changed and remains opt-in only.
@@ -35,7 +38,7 @@ not changed and remains opt-in only.
 | Check | Result |
 | --- | --- |
 | `py_compile tests/test_nature_shelf_trinkets_factory.py` | Passed |
-| `pytest tests/test_nature_shelf_trinkets_factory.py -q` | `10 passed, 1 warning` |
+| `pytest tests/test_nature_shelf_trinkets_factory.py -q` | `11 passed, 1 warning` |
 | unfiltered NatureShelf 20-sample benchmark | 20 success, 0 failures |
 | unfiltered NatureShelf 100-sample benchmark | 100 success, 0 failures |
 | unfiltered 1-room cpp smoke | Success, `scene.blend` written |

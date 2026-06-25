@@ -107,3 +107,31 @@ def test_nature_shelf_creature_genomes_sample_nurbs_handles():
 
     assert carnivore_genome.parts.item.part_factory.params["length"] > 0
     assert herbivore_genome.parts.item.part_factory.params["length"] > 0
+
+
+def test_nature_shelf_creature_factories_sample_nurbs_handles(monkeypatch):
+    def fake_genome_to_creature(genome, name):
+        return object(), []
+
+    def fake_join_and_rig_parts(root, parts, genome, **kwargs):
+        return object(), [], None, []
+
+    for module in (carnivore, herbivore):
+        monkeypatch.setattr(module.creature, "genome_to_creature", fake_genome_to_creature)
+        monkeypatch.setattr(module, "offset_center", lambda root: None)
+        monkeypatch.setattr(module.joining, "join_and_rig_parts", fake_join_and_rig_parts)
+        monkeypatch.setattr(module.butil, "parent_to", lambda *args, **kwargs: None)
+
+    placeholder = object()
+
+    with FixedSeed(0):
+        root = creatures.CarnivoreFactory(factory_seed=0, hair=False).create_asset(
+            0, placeholder
+        )
+    assert root is not None
+
+    with FixedSeed(0):
+        root = creatures.HerbivoreFactory(factory_seed=0, hair=False).create_asset(
+            0, placeholder
+        )
+    assert root is not None
