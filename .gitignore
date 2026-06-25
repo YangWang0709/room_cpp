@@ -150,6 +150,10 @@ infinigen/core/constraints/cpp/stable_pose_kernels.cpp
 *.7z
 *.log
 
+# Required source templates for creature NURBS geometry.
+!infinigen/assets/objects/creatures/parts/nurbs_data/
+!infinigen/assets/objects/creatures/parts/nurbs_data/*.npy
+
 # secrets
 .env
 .env.*

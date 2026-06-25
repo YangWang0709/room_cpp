@@ -1,7 +1,10 @@
 import numpy as np
 
 from infinigen.assets.objects import creatures, mollusk, rocks
+from infinigen.assets.objects.creatures import carnivore, herbivore
+from infinigen.assets.objects.creatures.parts import generic_nurbs
 from infinigen.assets.objects.elements.nature_shelf_trinkets import generate
+from infinigen.core.util.math import FixedSeed
 
 
 def test_nature_shelf_creature_filter_env_defaults_off(monkeypatch):
@@ -83,3 +86,24 @@ def test_nature_shelf_fast_stable_pose_allowed_unchanged():
     assert generate._fast_stable_pose_allowed(clam) is True
     assert generate._fast_stable_pose_allowed(mussel) is True
     assert generate._fast_stable_pose_allowed(boulder) is False
+
+
+def test_nature_shelf_creature_nurbs_templates_available():
+    for prefix in (
+        "body_feline",
+        "head_carnivore",
+        "body_herbivore",
+        "head_herbivore",
+    ):
+        assert any(k.startswith(prefix) for k in generic_nurbs.NURBS_KEYS)
+
+
+def test_nature_shelf_creature_genomes_sample_nurbs_handles():
+    with FixedSeed(0):
+        carnivore_genome = carnivore.tiger_genome()
+
+    with FixedSeed(0):
+        herbivore_genome = herbivore.herbivore_genome()
+
+    assert carnivore_genome.parts.item.part_factory.params["length"] > 0
+    assert herbivore_genome.parts.item.part_factory.params["length"] > 0
